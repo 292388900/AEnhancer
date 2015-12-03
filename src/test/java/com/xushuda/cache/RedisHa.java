@@ -1,4 +1,4 @@
-package com.xushuda.cache.driver;
+package com.xushuda.cache;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.baidu.unbiz.redis.RedisCacheManager;
+import com.xushuda.cache.driver.CacheDriver;
 import com.xushuda.cache.model.Info;
 
 /**

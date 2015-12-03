@@ -6,8 +6,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import com.xushuda.cache.RedisHa;
 import com.xushuda.cache.driver.CacheDriver;
-import com.xushuda.cache.driver.RedisHa;
 
 /**
  * 对Cached注解的方法，有如下注意事项：<br>

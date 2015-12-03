@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+    		http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+            http://www.springframework.org/schema/context 
+            http://www.springframework.org/schema/context/spring-context-3.1.xsd
+            http://www.springframework.org/schema/aop 
+            http://www.springframework.org/schema/aop/spring-aop-3.1.xsd">
+
+	<context:component-scan base-package="com.xushuda" />
+	<!-- annotation driven cache -->
+	<aop:aspectj-autoproxy />
+	<bean
+		class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor" />
+	<bean id="cacheAop" class="com.xushuda.cache.entry.CachePointCut"></bean>
+	<bean
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="ignoreUnresolvablePlaceholders" value="true" />
+		<property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_OVERRIDE" />
+		<property name="ignoreResourceNotFound" value="true" />
+		<property name="locations">
+			<list>
+				<value>classpath*:sitekv.properties</value>
+				<value>classpath*:redis-config.properties</value>
+			</list>
+		</property>
+	</bean>
+
+	<bean id="sitekvRedisClientConfig1" class="com.baidu.unbiz.redis.config.RedisHAClientConfig">
+		<property name="redisServerHost">
+			<value>${INNER.SITEKV.SERVER.1}</value>
+		</property>
+		<property name="redisServerPort">
+			<value>${INNER.SITEKV.PORT.1}</value>
+		</property>
+		<property name="timeout">
+			<value>${INNER.SITEKV.TIMEOUT.1}</value>
+		</property>
+		<property name="redisAuthKey">
+			<value>${INNER.SITEKV.AUTHKEY.1}</value>
+		</property>
+	</bean>
+
+	<bean id="sitekvRedisClient1" class="com.baidu.unbiz.redis.RedisClient">
+		<constructor-arg>
+			<ref bean="sitekvRedisClientConfig1" />
+		</constructor-arg>
+	</bean>
+
+	<bean id="sitekvRedisClientConfig2" class="com.baidu.unbiz.redis.config.RedisHAClientConfig">
+		<property name="redisServerHost">
+			<value>${INNER.SITEKV.SERVER.2}</value>
+		</property>
+		<property name="redisServerPort">
+			<value>${INNER.SITEKV.PORT.2}</value>
+		</property>
+		<property name="timeout">
+			<value>${INNER.SITEKV.TIMEOUT.2}</value>
+		</property>
+		<property name="redisAuthKey">
+			<value>${INNER.SITEKV.AUTHKEY.2}</value>
+		</property>
+	</bean>
+
+	<bean id="sitekvRedisClient2" class="com.baidu.unbiz.redis.RedisClient">
+		<constructor-arg>
+			<ref bean="sitekvRedisClientConfig2" />
+		</constructor-arg>
+	</bean>
+
+	<bean id="innerSitekvRedisMgr" class="com.baidu.unbiz.redis.RedisCacheManager">
+		<!-- 多写随机读策略，配置几个client就写几份，全部写入，任意成功即可，读策略采用随机读，如遇到null则尝试其他实例 -->
+		<property name="clientList">
+			<list>
+				<ref bean="sitekvRedisClient1" />
+				<ref bean="sitekvRedisClient2" />
+			</list>
+		</property>
+
+		<!-- 多写随机读策略重试次数 -->
+		<property name="retryTimes">
+			<value>${redis.group1.retry.times}</value>
+		</property>
+
+		<!-- 失效检测器轮询检测时间间隔，此值大于0表示启用失效检测器 -->
+		<property name="evictorDelayCheckSeconds">
+			<value>${redis.evictor.delayCheckSeconds}</value>
+		</property>
+
+		<!-- 失效检测器延迟启动时间 -->
+		<property name="evictorCheckPeriodSeconds">
+			<value>${redis.evictor.checkPeriodSeconds}</value>
+		</property>
+
+		<!-- 失效检测器检测Ping-Pong心跳，连接失败次数超过这个值则剔除，直到心跳正常再恢复 -->
+		<property name="evictorFailedTimesToBeTickOut">
+			<value>${redis.evictor.failedTimesToBeTickOut}</value>
+		</property>
+	</bean>
+</beans>

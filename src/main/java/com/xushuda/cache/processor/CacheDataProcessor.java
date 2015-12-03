@@ -1,4 +1,4 @@
-package com.xushuda.cache;
+package com.xushuda.cache.processor;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -46,12 +46,13 @@ public class CacheDataProcessor {
         Object[] args = jp.getArgs().clone(); // a new copy
         CacheDriver driver = fac.getCacheDriver(annotation.getDriverClass());
         Object data = driver.retrieve(driver.id(args));
+        logger.info("data retrieved for key {} is {}", args, data);
         if (null == data) {
             logger.info("data doesn't exists in cache, start to call the target process with args {}", args);
             data = jp.proceed(args);
             if (null != data) {
                 driver.set(driver.id(args), data, annotation.getExpiration());
-                logger.info("get data: {},and saved to cache", data);
+                logger.info("get data: {}, and saved to cache", data);
             } else {
                 logger.warn("the data got from target procedure is still null");
             }

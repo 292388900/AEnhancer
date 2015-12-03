@@ -1,2 +1,2 @@
 # CacheAop
-Light Weight Cache Inferstructure for Application
+Light Weight Cache Infrastructure for Application

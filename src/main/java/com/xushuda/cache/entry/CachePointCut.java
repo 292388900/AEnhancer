@@ -5,7 +5,7 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.xushuda.cache.CacheFrontProcessor;
+import com.xushuda.cache.processor.CacheFrontProcessor;
 
 /**
  * 定义不同的pointcut

@@ -1,23 +1,39 @@
 package com.xushuda.cache.driver;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Service;
 
 /**
- * factory class , current simply return clazz.newInstance
+ * factory class
  * 
  * @author xushuda
  *
  */
 @Service
-// TODO 不作为自动加载，使用application context 配置
-public class DefaultCacheDriverFactory implements CacheDriverFactory{
+public class DefaultCacheDriverFactory implements CacheDriverFactory, ApplicationContextAware {
 
-    @Autowired
-    private CacheDriver redisHa;
+    private ApplicationContext context;
+
+    private Map<Class<? extends CacheDriver>, CacheDriver> beanMap =
+            new HashMap<Class<? extends CacheDriver>, CacheDriver>();
 
     @Override
     public CacheDriver getCacheDriver(Class<? extends CacheDriver> clazz) {
-        return redisHa;
+        CacheDriver bean = beanMap.get(clazz);
+        if (null == bean) {
+            bean = context.getBean(clazz);
+            beanMap.put(clazz, bean);
+        }
+        return bean;
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.context = applicationContext;
     }
 }
