@@ -7,21 +7,18 @@ import java.util.Map;
 /**
  * CacheDriver
  * 
+ * <pre>
+ * 相当于二级key的结构:
+ *            |-- key1:data
+ * keySpace1->|-- key2:data 
+ *            |-- key3:data
+ *            |...
+ * keySpace2->|-- key1:data
+ * 
  * @author xushuda
  *
  */
 public interface CacheDriver {
-
-    /**
-     * generate the identifier for a data <br>
-     * args contain all the argument, including that in ignore list<br>
-     * 对于Aggregation类，这个参数包含所有非aggr类的参数，和aggr类中的单个参数<br>
-     * 一般来说，对Object对象的处理，生成签名都会调用toString一类的方法，注意参数类中相应方法的正确性<br>
-     * TODO 用hashCode?
-     * @param args
-     * @return
-     */
-    public String id(Object...args);
 
     /**
      * if the data is not in cache ,should return null
@@ -29,7 +26,7 @@ public interface CacheDriver {
      * @param id
      * @return
      */
-    public Object retrieve(String id);
+    public Object retrieve(String key, String keySpace);
 
     /**
      * set the data and key to cache
@@ -38,15 +35,15 @@ public interface CacheDriver {
      * @param data
      * @param expire
      */
-    public void set(String id, Object data, int expire);
+    public void set(String key, Object data, int expire, String keySpace);
 
     /**
      * set the data according to key and value
      * 
-     * @param datas
+     * @param datas key->data
      * @param experiation
      */
-    public void setAll(Map<String, Serializable> datas, int experiation);
+    public void setAll(Map<String, Serializable> datas, int experiation, String keySpace);
 
     /**
      * retrieve all the data from keys <br>
@@ -58,15 +55,15 @@ public interface CacheDriver {
      * @param keys
      * @return
      */
-    public List<Object> getAll(String[] ids);
+    public List<Object> getAll(String[] keys, String keySpace);
 
     /**
-     * flush one key
+     * flush one keySpace
      * 
      * @param key
      * @return
      */
-    public abstract boolean flush(String key);
+    public abstract boolean flush(String keySpace);
 
     /**
      * flushAll

@@ -2,12 +2,12 @@ package com.xushuda.cache.processor;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.aspectj.lang.ProceedingJoinPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,8 +17,7 @@ import com.xushuda.cache.driver.CacheDriver;
 import com.xushuda.cache.driver.CacheDriverFactory;
 import com.xushuda.cache.exception.UnexpectedStateException;
 import com.xushuda.cache.model.Aggregation;
-import com.xushuda.cache.model.AnnotationInfo;
-import com.xushuda.cache.model.SignatureInfo;
+import com.xushuda.cache.model.MethodInfo;
 
 /**
  * 与cacheDrive的接口交互，处理Cache 所有获取为null的元素，视为可能远程的失败，不做存储<br>
@@ -35,6 +34,10 @@ public class CacheDataProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(CacheDataProcessor.class);
 
+    private static final String FIXED = "FIXED";
+
+    private static final String KEY_SEPERATOR = ",";
+
     /**
      * 非聚合类的处理方式。
      * 
@@ -43,16 +46,16 @@ public class CacheDataProcessor {
      * @return
      * @throws Throwable
      */
-    public Object processNormal(AnnotationInfo annotation, ProceedingJoinPoint jp) throws Throwable {
-        Object[] args = jp.getArgs().clone(); // a new copy
-        CacheDriver driver = fac.getCacheDriver(annotation.getDriverClass());
-        Object data = driver.retrieve(driver.id(args));
+    public Object processNormal(MethodInfo methodInfo) throws Throwable {
+        Object[] args = methodInfo.getArgs(); // a new copy
+        CacheDriver driver = fac.getCacheDriver(methodInfo.getDriver());
+        Object data = driver.retrieve(getKey(args, methodInfo), methodInfo.getSignatureStr());
         logger.info("data retrieved for key {} is {}", args, data);
         if (null == data) {
             logger.info("data doesn't exists in cache, start to call the target process with args {}", args);
-            data = jp.proceed(args);
+            data = methodInfo.proceedWith(args);
             if (null != data) {
-                driver.set(driver.id(args), data, annotation.getExpiration());
+                driver.set(getKey(args, methodInfo), data, methodInfo.getExpiration(), methodInfo.getSignatureStr());
                 logger.info("get data: {}, and saved to cache", data);
             } else {
                 logger.warn("the data got from target procedure is still null");
@@ -71,40 +74,33 @@ public class CacheDataProcessor {
      * @throws Throwable
      */
     @SuppressWarnings("rawtypes")
-    public Object processAggregated(SignatureInfo signature, AnnotationInfo annotation, ProceedingJoinPoint jp)
-            throws Throwable {
-        Object[] args = jp.getArgs().clone(); // a new copy !!important!!
-        if (args[signature.getPosition()] == null) {
-            throw new NullPointerException("the argument of at position: " + signature.getPosition()
-                    + "(Collection or Map) should not be null ");
+    public Object processAggregated(MethodInfo methodInfo) throws Throwable {
+        if (methodInfo.getOrgAggrParam() == null) {
+            throw new NullPointerException("the aggregation param (Collection or Map) should not be null ");
         }
         Aggregation orignalAggregatedParam =
-                new Aggregation(signature.getAggParamType(), args[signature.getPosition()]);
-        Aggregation unCachedParam = new Aggregation(signature.getAggParamType());
-        Aggregation result = new Aggregation(signature.getRetType());
-        Aggregation unCachedResult = new Aggregation(signature.getRetType());
-        CacheDriver driver = fac.getCacheDriver(annotation.getDriverClass());
+                new Aggregation(methodInfo.getAggParamType(), methodInfo.getOrgAggrParam());
+        Aggregation unCachedParam = new Aggregation(methodInfo.getAggParamType());
+        Aggregation result = new Aggregation(methodInfo.getRetType());
+        Aggregation unCachedResult = new Aggregation(methodInfo.getRetType());
+        CacheDriver driver = fac.getCacheDriver(methodInfo.getDriver());
 
         // 原始参数中的聚合类参数如果为空，那么直接返回空的结果集。
         if (orignalAggregatedParam.isEmpty()) {
             return result.toInstance();
         }
         // 根据param中获取key，并且从cacheDriver中取得数据
-        Object key = null;
         List<String> keys = new ArrayList<String>();
-
         for (Object obj : orignalAggregatedParam) {
             if (null == obj) {
                 logger.error("the object in parameter is null, which will be skipped");
                 continue;
             }
-            key = annotation.extParam(obj);
-            args[signature.getPosition()] = key;
-            keys.add(driver.id(args));
+            keys.add(getKey(methodInfo.replaceArgsWithKeys(methodInfo.getKeyFromParam(obj)), methodInfo));
         }
 
         // 获取缓存中的数据
-        List<Object> cachedResult = driver.getAll(keys.toArray(new String[0]));
+        List<Object> cachedResult = driver.getAll(keys.toArray(new String[0]), methodInfo.getSignatureStr());
         // 接口会按照入参的顺序返回结果，对于未命中的参数会返回null.所以结果集合大小必须和keys一样
         assertSize(cachedResult, keys);
         // 遍历对比key和cache中的结果
@@ -123,11 +119,10 @@ public class CacheDataProcessor {
         if (!unCachedParam.isEmpty()) {
 
             // the argument
-            for (Aggregation splited : unCachedParam.split(annotation.getBatchSize())) {
-                args[signature.getPosition()] = splited.toInstance();
+            for (Aggregation splited : unCachedParam.split(methodInfo.getBatchSize())) {
                 // get the data from target process
-                logger.info("unCached keys exist, call the target process to get data, args are : {}", args);
-                Object rawResult = jp.proceed(args);
+                logger.info("unCached keys exist, call the target process to get data, keys args are : {}", splited);
+                Object rawResult = methodInfo.proceedWith(methodInfo.replaceArgsWithKeys(splited.toInstance()));
                 if (null != rawResult) {
                     logger.info("data is get from target process : {}", rawResult);
                     unCachedResult.addAll(rawResult);
@@ -146,14 +141,15 @@ public class CacheDataProcessor {
                         logger.error("the element got from procedure contains nill, which won't be saved to cache");
                         continue;
                     }
-                    args[signature.getPosition()] = annotation.extResult(resultElement);
-                    datas.put(driver.id(args), (Serializable) resultElement);
+                    datas.put(
+                            getKey(methodInfo.replaceArgsWithKeys(methodInfo.getKeyFromResult(resultElement)),
+                                    methodInfo), (Serializable) resultElement);
                 }
 
                 // 缓存这部分数据
                 logger.info("unCached data (order is disrupted) will be saved (expiration: {}) to cahce : {}",
-                        annotation.getExpiration(), datas);
-                driver.setAll(datas, annotation.getExpiration());
+                        methodInfo.getExpiration(), datas);
+                driver.setAll(datas, methodInfo.getExpiration(), methodInfo.getSignatureStr());
                 // 加入result的集合
                 result.add(unCachedResult);
             }
@@ -172,23 +168,19 @@ public class CacheDataProcessor {
      * @return
      * @throws Throwable
      */
-    public Object processAggregatedWithoutCache(SignatureInfo signature, AnnotationInfo annotation,
-            ProceedingJoinPoint jp) throws Throwable {
-        Object[] args = jp.getArgs().clone(); // a new copy !!important!!
-        if (args[signature.getPosition()] == null) {
-            throw new NullPointerException("the argument of at position: " + signature.getPosition()
-                    + "(Collection or Map) should not be null ");
+    public Object processAggregatedWithoutCache(MethodInfo methodInfo) throws Throwable {
+        if (methodInfo.getOrgAggrParam() == null) {
+            throw new NullPointerException("the argument for aggrgation as (Collection or Map) should not be null ");
         }
         Aggregation orignalAggregatedParam =
-                new Aggregation(signature.getAggParamType(), args[signature.getPosition()]);
-        Aggregation result = new Aggregation(signature.getRetType());
+                new Aggregation(methodInfo.getAggParamType(), methodInfo.getOrgAggrParam());
+        Aggregation result = new Aggregation(methodInfo.getRetType());
         // 直接分批调用
         if (!orignalAggregatedParam.isEmpty()) {
             // the argument
-            for (Aggregation splited : orignalAggregatedParam.split(annotation.getBatchSize())) {
-                args[signature.getPosition()] = splited.toInstance();
+            for (Aggregation splited : orignalAggregatedParam.split(methodInfo.getBatchSize())) {
                 // get the data from target process
-                Object rawResult = jp.proceed(args);
+                Object rawResult = methodInfo.proceedWith(methodInfo.replaceArgsWithKeys(splited.toInstance()));
                 if (null != rawResult) {
                     logger.info("data is get from target process : {}", rawResult);
                     result.addAll(rawResult);
@@ -227,5 +219,43 @@ public class CacheDataProcessor {
             throw new UnexpectedStateException("error return size " + (null == ret ? 0 : ret.size())
                     + " not eauals to key size " + (null == key ? 0 : key.size()));
         }
+    }
+
+    /**
+     * 获取参数对应的key
+     * 
+     * @param args
+     * @param methodInfo
+     * @return
+     */
+    private String getKey(Object[] args, MethodInfo methodInfo) {
+        if (args != null) {
+            // get the key's prefix
+            StringBuilder key = new StringBuilder();
+            int pos = 0;
+            // 标记ignore列表中的位置
+            BitSet ign = new BitSet(args.length);
+            for (int i : methodInfo.getIgnoreList()) {
+                ign.set(i);
+            }
+            // 将所有非空，并且不在ignore列表中的参数计入key
+            for (Object obj : args) {
+                // 使用参数对象的HashCode作为key
+                if (obj != null && !ign.get(pos++)) {
+                    key.append(KEY_SEPERATOR).append(obj.hashCode());
+                }
+            }
+            // 返回string的key
+            String ret = key.toString();
+            logger.debug("key for org data {} is: {}", args, ret);
+            // empty string will return FIXED
+            if (!ret.equals("")) {
+                return ret;
+            }
+            // possible, as all the argument is in ignore list
+            logger.debug("the arguments is not null but the key is null @ {}", methodInfo.getSignatureStr());
+        }
+
+        return FIXED;
     }
 }

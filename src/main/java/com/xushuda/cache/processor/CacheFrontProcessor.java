@@ -12,7 +12,7 @@ import com.xushuda.cache.exception.CacheAopException;
 import com.xushuda.cache.exception.IllegalParamException;
 import com.xushuda.cache.model.Aggregation;
 import com.xushuda.cache.model.AnnotationInfo;
-import com.xushuda.cache.model.Info;
+import com.xushuda.cache.model.MethodInfo;
 import com.xushuda.cache.model.SignatureInfo;
 
 /**
@@ -48,6 +48,8 @@ public class CacheFrontProcessor {
                 if (Aggregation.isAggregationType(paramType)) {
                     // fail fast 不符合期望
                     if (++aggregation > 1) {
+                        // should not reach here
+                        // 这个异常不应该在发行版本中出现，一定是annotation的参数不正确（与signature不符合）
                         throw new IllegalParamException("at most one Aggregation is allowed in param");
                     }
                     aggParamType = paramType;
@@ -101,28 +103,30 @@ public class CacheFrontProcessor {
      * @throws Throwable
      */
     public Object aopAround(ProceedingJoinPoint jp, Cached cached) throws Throwable {
+        // 解析注解
+        AnnotationInfo annotation = parseAnnotation(cached);
+        // 解析函数签名
+        SignatureInfo signature = parseSignature(jp, annotation.aggrInvok());
+        // validate the signature and annotation
+        validate(signature, annotation); 
+        // 生成methodInfo对象
+        MethodInfo methodInfo = new MethodInfo(signature, annotation, jp);
+        // fail fast,在这之前抛出的异常都是由于编码的错误，所以，不应该捕获
+        // log
+        logger.info("success getting methodInfo {}", methodInfo);
         try {
-            // 解析注解
-            AnnotationInfo annotation = parseAnnotation(cached);
-            // 解析函数签名
-            SignatureInfo signature = parseSignature(jp, annotation.aggrInvok());
-            // set the annotation and signature to the threadLocal variable
-            Info.init(signature, annotation);
-            // validate the signature and annotation
-            validate(signature, annotation);
-
-            // 根据不同的
+            // 根据不同的请求类型
             if (!annotation.aggrInvok()) {
                 logger.info("start to retrive data from {} ", signature.toString());
-                return cacheProcessor.processNormal(annotation, jp);
+                return cacheProcessor.processNormal(methodInfo);
             } else {
-                return cacheProcessor.processAggregated(signature, annotation, jp);
+                return cacheProcessor.processAggregated(methodInfo);
             }
         } catch (CacheAopException exp) {
             // be careful, this kind of exception may caused by your incorrect code
             logger.error("error occors in cache aop , caused by :", exp);
-            if (Info.getAnnotation().getBatchSize() > 0) {
-                return cacheProcessor.processAggregatedWithoutCache(Info.getSignature(), Info.getAnnotation(), jp);
+            if (methodInfo.getBatchSize() > 0) {
+                return cacheProcessor.processAggregatedWithoutCache(methodInfo);
             }
             // return the original call
             return jp.proceed(jp.getArgs());
@@ -130,13 +134,10 @@ public class CacheFrontProcessor {
             // swallow the runtime exception
             logger.error("runtime exception occurs in cache aop , caused by :", rtExp);
             // be careful about this kind of exception, the cache server may just crash
-            if (Info.getAnnotation().getBatchSize() > 0) {
-                return cacheProcessor.processAggregatedWithoutCache(Info.getSignature(), Info.getAnnotation(), jp);
+            if (methodInfo.getBatchSize() > 0) {
+                return cacheProcessor.processAggregatedWithoutCache(methodInfo);
             }
             return jp.proceed(jp.getArgs());
-        } finally {
-            // 释放threadLocal的对象
-            Info.unset();
         }
 
     }

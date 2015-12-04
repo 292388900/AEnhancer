@@ -13,8 +13,9 @@ import java.lang.annotation.Target;
  * 对于一般的集合对象，上下文对象为一个元素Element <br>
  * 2、paramK这个方法用于从参数集合中获取key，来访问缓存 , resultK这个方法用于从结果集合中获取key，用以缓存数据。<br>
  * 所以对于某数据，从paramK，resultK得到的key必须一致 <br>
- * 3、paramK不为空，resultK为空的情况是错误的,因为不可能返回值只有一个key
- * 
+ * 3、paramK不为空，resultK为空的情况是错误的,因为不可能返回值只有一个key<br>
+ * 4、在生成key的过程中，会调用参数（聚合Invok则调用集合element）的hashCode函数，<br>
+ * 所以务必确保不在ignList中的参数都正确地重写了hashCode函数，不是简单返回对象的内存地址
  * 
  * @author xushuda
  *

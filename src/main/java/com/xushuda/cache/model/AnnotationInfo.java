@@ -36,7 +36,7 @@ public class AnnotationInfo {
         return expiration;
     }
 
-    public String getDriverClass() {
+    public String getDriverName() {
         return driverBeanName;
     }
 
@@ -48,7 +48,7 @@ public class AnnotationInfo {
         this.expiration = expiration;
     }
 
-    public void setDriverClass(String driverBeanName) {
+    public void setDriverName(String driverBeanName) {
         this.driverBeanName = driverBeanName;
     }
 

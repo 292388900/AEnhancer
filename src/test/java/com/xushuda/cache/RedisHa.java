@@ -2,7 +2,6 @@ package com.xushuda.cache;
 
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,16 +13,19 @@ import org.slf4j.LoggerFactory;
 
 import com.baidu.unbiz.redis.RedisCacheManager;
 import com.xushuda.cache.driver.CacheDriver;
-import com.xushuda.cache.model.Info;
 
 /**
  * Redis-Ha client 基于现在的模型，每个key是函数的签名，不相同的值作为不同的field存在HashMap中 <br>
  * flushKey 将某个函数签名下的所有值刷新 <br>
  * flushAll 刷新所有的缓存 <br>
- *                      |-- skey---data
- * 相当于二级key的结构,fkey-|-- skey---data 
- *                      |-- skey---data
  * 
+ * <pre>
+ * 相当于二级key的结构:
+ *            |-- key1:data
+ * keySpace1->|-- key2:data 
+ *            |-- key3:data
+ *            |...
+ * keySpace2->|-- key1:data
  * @author xushuda
  *
  */
@@ -52,87 +54,47 @@ public class RedisHa implements CacheDriver {
      */
     private static final Logger logger = LoggerFactory.getLogger(RedisHa.class);
 
-    private static final String FIXED = "FIXED";
-
-    private static final String KEY_SEPERATOR = ",";
-
     @Override
-    public String id(Object...args) {
-
-        if (args != null) {
-            // get the key's prefix
-            StringBuilder key = new StringBuilder();
-            int pos = 0;
-            // 标记ignore列表中的位置
-            BitSet ign = new BitSet(args.length);
-            for (int i : Info.getAnnotation().getIgnList()) {
-                ign.set(i);
-            }
-            // 将所有非空，并且不在ignore列表中的参数计入key
-            for (Object obj : args) {
-                if (obj != null && !ign.get(pos++)) {
-                    key.append(KEY_SEPERATOR).append(obj.toString());
-                }
-            }
-            // 返回string的key
-            String ret = key.toString();
-            // empty string will return FIXED
-            if (!ret.equals("")) {
-                return ret;
-            }
-            // possible, as all the argument is in ignore list
-            logger.debug("the arguments is not null but the key is null @ {}", Info.getSignature().toString());
-        }
-
-        return FIXED;
-
-    }
-
-    @Override
-    public Object retrieve(String id) {
-        String key = Info.getSignature().toString();
-        if (shouldFlush(key)) {
-            flush(key);
+    public Object retrieve(String key, String keySpace) {
+        if (shouldFlush(keySpace)) {
+            flush(keySpace);
             return null;
         }
-        return innerSitekvRedisMgr.hget(key, id);
+        return innerSitekvRedisMgr.hget(keySpace, key);
     }
 
     @Override
-    public void set(String id, Object data, int expiration) {
-        String key = Info.getSignature().toString();
-        if (innerSitekvRedisMgr.existsKey(key)) {
-            innerSitekvRedisMgr.hput(key, id, (Serializable) data);
+    public void set(String key, Object data, int expiration, String keySpace) {
+        if (innerSitekvRedisMgr.existsKey(keySpace)) {
+            innerSitekvRedisMgr.hput(keySpace, key, (Serializable) data);
             // 由于在cached中定义的时间单位是秒，api中是毫秒，所以扩大1000倍
-            if (!innerSitekvRedisMgr.extendTime(key, (expiration << 10) & 0x7FFFFFFF)) {
-                logger.error("set the expiration time of key {} to {} ,error ", key, expiration);
+            if (!innerSitekvRedisMgr.extendTime(keySpace, (expiration << 10) & 0x7FFFFFFF)) {
+                logger.error("set the expiration time of key {} to {} ,error ", keySpace, expiration);
             }
         } else {
-            innerSitekvRedisMgr.hput(key, id, (Serializable) data);
+            innerSitekvRedisMgr.hput(keySpace, key, (Serializable) data);
         }
     }
 
     @Override
-    public List<Object> getAll(String[] ids) {
-        String key = Info.getSignature().toString();
-        if (shouldFlush(key)) {
-            flush(key);
+    public List<Object> getAll(String[] keys, String keySpace) {
+        if (shouldFlush(keySpace)) {
+            flush(keySpace);
             // 返回与key同长度的初始化为null的数组
-            return Arrays.asList(new Object[ids.length]);
+            return Arrays.asList(new Object[keys.length]);
         }
-        return innerSitekvRedisMgr.hmGet(key, ids);
+        return innerSitekvRedisMgr.hmGet(keySpace, keys);
     }
 
     @Override
-    public void setAll(Map<String, Serializable> datas, int expiration) {
-        String key = Info.getSignature().toString();
-        if (!innerSitekvRedisMgr.existsKey(key)) {
-            innerSitekvRedisMgr.hmSet(key, datas);
-            if (!innerSitekvRedisMgr.extendTime(key, (expiration << 10) & 0x7FFFFFFF)) {
-                logger.error("set the expiration time of key {} to {} ,error ", key, expiration);
+    public void setAll(Map<String, Serializable> datas, int expiration, String keySpace) {
+        if (!innerSitekvRedisMgr.existsKey(keySpace)) {
+            innerSitekvRedisMgr.hmSet(keySpace, datas);
+            if (!innerSitekvRedisMgr.extendTime(keySpace, (expiration << 10) & 0x7FFFFFFF)) {
+                logger.error("set the expiration time of key {} to {} ,error ", keySpace, expiration);
             }
         } else {
-            innerSitekvRedisMgr.hmSet(key, datas);
+            innerSitekvRedisMgr.hmSet(keySpace, datas);
         }
     }
 
