@@ -21,7 +21,8 @@ import com.xushuda.cache.model.AnnotationInfo;
 import com.xushuda.cache.model.SignatureInfo;
 
 /**
- * 与cacheDrive的接口交互，处理Cache
+ * 与cacheDrive的接口交互，处理Cache 所有获取为null的元素，视为可能远程的失败，不做存储<br>
+ * 实际上，被修饰的函数本身应该（必须）处理错误的信息，仅将需要缓存的数据返回。
  * 
  * @author xushuda
  *
@@ -30,7 +31,7 @@ import com.xushuda.cache.model.SignatureInfo;
 public class CacheDataProcessor {
 
     @Autowired
-    private CacheDriverFactory fac; // TODO 这里本来是自动加载的，如果要增加可配置性，就改为配置application context
+    private CacheDriverFactory fac;
 
     private static final Logger logger = LoggerFactory.getLogger(CacheDataProcessor.class);
 
@@ -135,7 +136,7 @@ public class CacheDataProcessor {
                 }
             }
             // 集合大小应该一样
-            assertSize(unCachedParam, unCachedResult);
+            // assertSize(unCachedParam, unCachedResult);
             if (!unCachedResult.isEmpty()) {
 
                 // 生成批量缓存的Map
@@ -187,7 +188,6 @@ public class CacheDataProcessor {
             for (Aggregation splited : orignalAggregatedParam.split(annotation.getBatchSize())) {
                 args[signature.getPosition()] = splited.toInstance();
                 // get the data from target process
-                logger.info("unCached keys exist, call the target process to get data, args are : {}", args);
                 Object rawResult = jp.proceed(args);
                 if (null != rawResult) {
                     logger.info("data is get from target process : {}", rawResult);
@@ -221,6 +221,7 @@ public class CacheDataProcessor {
      * @param key
      * @throws UnexpectedStateException
      */
+    @SuppressWarnings("unused")
     private void assertSize(Aggregation ret, Aggregation key) throws UnexpectedStateException {
         if (ret == null || key == null || ret.size() != key.size()) {
             throw new UnexpectedStateException("error return size " + (null == ret ? 0 : ret.size())

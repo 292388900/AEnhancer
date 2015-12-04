@@ -176,7 +176,8 @@ public class Aggregation implements Iterable {
     }
 
     /**
-     * 生成对应targetType 的集合（Collection，Map）类
+     * 生成对应targetType 的集合（Collection，Map）类, 逻辑是根据构造函数中的class对象构造 <br>
+     * 如果class对象是个接口，则取一个实现子类来作为容器 ，如果class是个实体类容器，则调用newInstance生成对象
      * 
      * @return
      * @throws InstantiationException NOTE：如果target是个实体类，但是没有默认构造函数

@@ -19,18 +19,20 @@ public class DefaultCacheDriverFactory implements CacheDriverFactory, Applicatio
 
     private ApplicationContext context;
 
-    private Map<Class<? extends CacheDriver>, CacheDriver> beanMap =
-            new HashMap<Class<? extends CacheDriver>, CacheDriver>();
+    private Map<String, CacheDriver> beanMap =
+            new HashMap<String, CacheDriver>();
 
     @Override
-    public CacheDriver getCacheDriver(Class<? extends CacheDriver> clazz) {
-        CacheDriver bean = beanMap.get(clazz);
+    public CacheDriver getCacheDriver(String beanName) {
+        CacheDriver bean = beanMap.get(beanName);
         if (null == bean) {
-            bean = context.getBean(clazz);
-            beanMap.put(clazz, bean);
+            // 从当前的spring 容器获取对应的bean，如果一个clazz对应了多个bean，则会抛出异常
+            bean = context.getBean(beanName,CacheDriver.class);
+            beanMap.put(beanName, bean);
         }
         return bean;
     }
+    
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {

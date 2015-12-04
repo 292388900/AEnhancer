@@ -8,6 +8,6 @@ public interface CacheDriverFactory {
      * @param clazz
      * @return
      */
-    public abstract CacheDriver getCacheDriver(Class<? extends CacheDriver> clazz);
+    public abstract CacheDriver getCacheDriver(String beanName);
 
 }

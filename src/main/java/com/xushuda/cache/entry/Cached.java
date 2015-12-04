@@ -6,9 +6,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import com.xushuda.cache.RedisHa;
-import com.xushuda.cache.driver.CacheDriver;
-
 /**
  * 对Cached注解的方法，有如下注意事项：<br>
  * 1、paramK和resultK使用spring expression language。<br>
@@ -16,7 +13,7 @@ import com.xushuda.cache.driver.CacheDriver;
  * 对于一般的集合对象，上下文对象为一个元素Element <br>
  * 2、paramK这个方法用于从参数集合中获取key，来访问缓存 , resultK这个方法用于从结果集合中获取key，用以缓存数据。<br>
  * 所以对于某数据，从paramK，resultK得到的key必须一致 <br>
- * 3、paramK不为空，resultK为空的情况是错误的
+ * 3、paramK不为空，resultK为空的情况是错误的,因为不可能返回值只有一个key
  * 
  * 
  * @author xushuda
@@ -31,7 +28,7 @@ public @interface Cached {
      * 
      * @return
      */
-    Class<? extends CacheDriver> driverClass() default RedisHa.class;
+    String driver() default "DefaultDriver";
 
     /**
      * the expire of the data in second

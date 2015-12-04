@@ -67,7 +67,7 @@ public class CacheFrontProcessor {
      * @return
      */
     private AnnotationInfo parseAnnotation(Cached cached) {
-        return new AnnotationInfo(cached.paramK(), cached.resultK(), cached.batchLimit(), cached.driverClass(),
+        return new AnnotationInfo(cached.paramK(), cached.resultK(), cached.batchLimit(), cached.driver(),
                 cached.expiration(), cached.ignList());
     }
 
@@ -82,6 +82,9 @@ public class CacheFrontProcessor {
         // fail fast
         if (!sig.aggrAccessible() && anno.aggrInvok()) {
             throw new IllegalParamException("signatue conflict with annotation about weather use aggr invocation");
+        }
+        if (!anno.validateExt()) {
+            throw new IllegalParamException("annotation is error,extK==null and extParam!=null");
         }
         if (!sig.aggrAccessible() && anno.getBatchSize() > 0) {
             throw new IllegalParamException(

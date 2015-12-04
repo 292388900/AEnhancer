@@ -4,7 +4,6 @@ import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 
-import com.xushuda.cache.driver.CacheDriver;
 import com.xushuda.cache.exception.IllegalParamException;
 
 /**
@@ -20,7 +19,14 @@ public class AnnotationInfo {
     int[] ignList;
     int batchSize;
     int expiration;
-    Class<? extends CacheDriver> driverClass;
+    String driverBeanName;
+
+    public boolean validateExt() {
+        if (extractFromResult == null && extractFromParam != null) {
+            return false;
+        }
+        return true;
+    }
 
     public int getBatchSize() {
         return batchSize;
@@ -30,8 +36,8 @@ public class AnnotationInfo {
         return expiration;
     }
 
-    public Class<? extends CacheDriver> getDriverClass() {
-        return driverClass;
+    public String getDriverClass() {
+        return driverBeanName;
     }
 
     public void setBatchSize(int batchSize) {
@@ -42,11 +48,11 @@ public class AnnotationInfo {
         this.expiration = expiration;
     }
 
-    public void setDriverClass(Class<? extends CacheDriver> driverClass) {
-        this.driverClass = driverClass;
+    public void setDriverClass(String driverBeanName) {
+        this.driverBeanName = driverBeanName;
     }
 
-    public AnnotationInfo(String etParam, String etResult, int batchSize, Class<? extends CacheDriver> driverClass,
+    public AnnotationInfo(String etParam, String etResult, int batchSize, String driverBeanName,
             int expiration, int[] ignList) {
         SpelExpressionParser parser = new SpelExpressionParser();
 
@@ -59,7 +65,7 @@ public class AnnotationInfo {
         }
         this.expiration = expiration;
         this.batchSize = batchSize;
-        this.driverClass = driverClass;
+        this.driverBeanName = driverBeanName;
         this.ignList = ignList;
     }
 
@@ -67,9 +73,10 @@ public class AnnotationInfo {
      * 是否使用batch 批量、拆分式的请求查询方式
      * 
      * @return
+     * @throws IllegalParamException
      */
     public boolean aggrInvok() {
-        return null != extractFromResult;
+        return null != extractFromResult || null != extractFromParam;
     }
 
     /**

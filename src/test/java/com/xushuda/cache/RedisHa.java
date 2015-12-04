@@ -11,7 +11,6 @@ import javax.annotation.Resource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 
 import com.baidu.unbiz.redis.RedisCacheManager;
 import com.xushuda.cache.driver.CacheDriver;
@@ -28,7 +27,6 @@ import com.xushuda.cache.model.Info;
  * @author xushuda
  *
  */
-@Service
 public class RedisHa implements CacheDriver {
 
     @Resource(name = "innerSitekvRedisMgr")
