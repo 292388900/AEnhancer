@@ -9,14 +9,13 @@
             http://www.springframework.org/schema/aop 
             http://www.springframework.org/schema/aop/spring-aop-3.1.xsd">
 
-
 	<!-- annotation driven cache 需要在你的applicationContext.xml中加入如下配置 -->
-	<context:component-scan base-package="com.xushuda.cache" />
+	<context:component-scan base-package="com.baidu.acache" />
 	<aop:aspectj-autoproxy />
 	<bean
 		class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor" />
-	<bean id="cacheAop" class="com.xushuda.cache.entry.CachePointCut" />
+	<bean id="cacheAop" class="com.baidu.acache.entry.CachePointCut" />
 	<!-- 可以实现多个cacheDriver，并在注解中driver＝beanName选择需要的bean，DefaultDriver是缺省的driver-->
-	<bean name="DefaultDriver"
+	<bean name="DefaultCacheDriver"
 		class="your.implementation.of.com.xushuda.cache.driver.cacheDriver" />
 </beans>

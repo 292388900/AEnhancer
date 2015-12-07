@@ -1,23 +1,21 @@
-package com.xushuda.cache.processor;
+package com.baidu.acache.processor;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.xushuda.cache.driver.CacheDriver;
-import com.xushuda.cache.driver.CacheDriverFactory;
-import com.xushuda.cache.exception.UnexpectedStateException;
-import com.xushuda.cache.model.Aggregation;
-import com.xushuda.cache.model.MethodInfo;
+import com.baidu.acache.driver.CacheDriver;
+import com.baidu.acache.driver.CacheDriverFactory;
+import com.baidu.acache.exception.UnexpectedStateException;
+import com.baidu.acache.model.Aggregation;
+import com.baidu.acache.model.MethodInfo;
 
 /**
  * 与cacheDrive的接口交互，处理Cache 所有获取为null的元素，视为可能远程的失败，不做存储<br>
@@ -49,13 +47,13 @@ public class CacheDataProcessor {
     public Object processNormal(MethodInfo methodInfo) throws Throwable {
         Object[] args = methodInfo.getArgs(); // a new copy
         CacheDriver driver = fac.getCacheDriver(methodInfo.getDriver());
-        Object data = driver.retrieve(getKey(args, methodInfo), methodInfo.getSignatureStr());
+        Object data = driver.get(getKey(args, methodInfo), methodInfo.getNameSpace());
         logger.info("data retrieved for key {} is {}", args, data);
         if (null == data) {
             logger.info("data doesn't exists in cache, start to call the target process with args {}", args);
             data = methodInfo.proceedWith(args);
             if (null != data) {
-                driver.set(getKey(args, methodInfo), data, methodInfo.getExpiration(), methodInfo.getSignatureStr());
+                driver.set(getKey(args, methodInfo), data, methodInfo.getExpiration(), methodInfo.getNameSpace());
                 logger.info("get data: {}, and saved to cache", data);
             } else {
                 logger.warn("the data got from target procedure is still null");
@@ -100,7 +98,7 @@ public class CacheDataProcessor {
         }
 
         // 获取缓存中的数据
-        List<Object> cachedResult = driver.getAll(keys.toArray(new String[0]), methodInfo.getSignatureStr());
+        List<Object> cachedResult = driver.getAll(keys, methodInfo.getNameSpace());
         // 接口会按照入参的顺序返回结果，对于未命中的参数会返回null.所以结果集合大小必须和keys一样
         assertSize(cachedResult, keys);
         // 遍历对比key和cache中的结果
@@ -130,26 +128,27 @@ public class CacheDataProcessor {
                     logger.warn("the data is not avaliable from the procedure");
                 }
             }
-            // 集合大小应该一样
+            // 集合大小不用强制一样，多个value对应一个key则会造成覆盖，但多个key对应一个value其实没有问题
             // assertSize(unCachedParam, unCachedResult);
             if (!unCachedResult.isEmpty()) {
 
-                // 生成批量缓存的Map
-                Map<String, Serializable> datas = new HashMap<String, Serializable>();
+                // 生成批量缓存的kv
+                List<String> unCachedKeys = new LinkedList<String>();
+                List<Object> unCachedDatas = new LinkedList<Object>();
                 for (Object resultElement : unCachedResult) {
                     if (null == resultElement) {
                         logger.error("the element got from procedure contains nill, which won't be saved to cache");
                         continue;
                     }
-                    datas.put(
-                            getKey(methodInfo.replaceArgsWithKeys(methodInfo.getKeyFromResult(resultElement)),
-                                    methodInfo), (Serializable) resultElement);
+                    unCachedKeys.add(getKey(methodInfo.replaceArgsWithKeys(methodInfo.getKeyFromResult(resultElement)),
+                            methodInfo));
+                    unCachedDatas.add(resultElement);
                 }
-
+                assertSize(unCachedDatas, unCachedKeys);
                 // 缓存这部分数据
-                logger.info("unCached data (order is disrupted) will be saved (expiration: {}) to cahce : {}",
-                        methodInfo.getExpiration(), datas);
-                driver.setAll(datas, methodInfo.getExpiration(), methodInfo.getSignatureStr());
+                logger.info("unCached data (order is disrupted size {}) will be saved (expiration: {}) ",
+                        unCachedKeys.size(), methodInfo.getExpiration());
+                driver.setAll(unCachedKeys, unCachedDatas, methodInfo.getExpiration(), methodInfo.getNameSpace());
                 // 加入result的集合
                 result.add(unCachedResult);
             }
@@ -253,7 +252,7 @@ public class CacheDataProcessor {
                 return ret;
             }
             // possible, as all the argument is in ignore list
-            logger.debug("the arguments is not null but the key is null @ {}", methodInfo.getSignatureStr());
+            logger.debug("the arguments is not null but the key is null @ {}", methodInfo.getNameSpace());
         }
 
         return FIXED;

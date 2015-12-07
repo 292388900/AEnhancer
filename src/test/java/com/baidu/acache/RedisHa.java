@@ -1,8 +1,9 @@
-package com.xushuda.cache;
+package com.baidu.acache;
 
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -11,8 +12,8 @@ import javax.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.baidu.acache.driver.CacheDriver;
 import com.baidu.unbiz.redis.RedisCacheManager;
-import com.xushuda.cache.driver.CacheDriver;
 
 /**
  * Redis-Ha client 基于现在的模型，每个key是函数的签名，不相同的值作为不同的field存在HashMap中 <br>
@@ -40,7 +41,7 @@ public class RedisHa implements CacheDriver {
      * 之后的调用，只有当expiredTimeStamp大于keyEviction中的值(在上次刷新之后又手动调用flushAll)才会刷新<br>
      * 
      * 可能的问题：比如在后台调用flushAll，但是它被负载均衡到不同的实例上，但是对某数据的请求一直被负载到另一个实例，那么数据无法立即刷新<br>
-     * 
+     *
      */
     private long expiredTimeStamp;
 
@@ -55,7 +56,7 @@ public class RedisHa implements CacheDriver {
     private static final Logger logger = LoggerFactory.getLogger(RedisHa.class);
 
     @Override
-    public Object retrieve(String key, String keySpace) {
+    public Object get(String key, String keySpace) {
         if (shouldFlush(keySpace)) {
             flush(keySpace);
             return null;
@@ -77,24 +78,32 @@ public class RedisHa implements CacheDriver {
     }
 
     @Override
-    public List<Object> getAll(String[] keys, String keySpace) {
+    public List<Object> getAll(List<String> keys, String keySpace) {
         if (shouldFlush(keySpace)) {
             flush(keySpace);
             // 返回与key同长度的初始化为null的数组
-            return Arrays.asList(new Object[keys.length]);
+            return Arrays.asList(new Object[keys.size()]);
         }
-        return innerSitekvRedisMgr.hmGet(keySpace, keys);
+        return innerSitekvRedisMgr.hmGet(keySpace, keys.toArray(new String[0]));
     }
 
     @Override
-    public void setAll(Map<String, Serializable> datas, int expiration, String keySpace) {
+    public void setAll(List<String> keys, List<Object> datas, int expiration, String keySpace) {
+        Map<String, Serializable> dataMap = new HashMap<String, Serializable>();
+        Iterator<String> kIter = keys.iterator();
+        Iterator<Object> dIter = datas.iterator();
+        while (kIter.hasNext()) {
+            dataMap.put(kIter.next(), (Serializable) dIter.next());
+        }
+
         if (!innerSitekvRedisMgr.existsKey(keySpace)) {
-            innerSitekvRedisMgr.hmSet(keySpace, datas);
+
+            innerSitekvRedisMgr.hmSet(keySpace, dataMap);
             if (!innerSitekvRedisMgr.extendTime(keySpace, (expiration << 10) & 0x7FFFFFFF)) {
                 logger.error("set the expiration time of key {} to {} ,error ", keySpace, expiration);
             }
         } else {
-            innerSitekvRedisMgr.hmSet(keySpace, datas);
+            innerSitekvRedisMgr.hmSet(keySpace, dataMap);
         }
     }
 
@@ -127,9 +136,14 @@ public class RedisHa implements CacheDriver {
      * 手动调用flushAll的时候，也会刷新<br>
      * 
      * @param key
-     * @return
+     * @return 是否应该flush
      */
     private boolean shouldFlush(String key) {
         return !keyEviction.containsKey(key) || expiredTimeStamp > keyEviction.get(key);
+    }
+
+    @Override
+    public boolean flush(String nameSpace, String key) {
+        throw new UnsupportedOperationException("cant exec flush");
     }
 }

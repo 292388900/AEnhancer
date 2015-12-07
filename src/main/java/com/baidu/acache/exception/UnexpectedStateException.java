@@ -1,4 +1,4 @@
-package com.xushuda.cache.exception;
+package com.baidu.acache.exception;
 
 /**
  * the storage is in unexpected state <br>

@@ -1,4 +1,4 @@
-package com.xushuda.cache;
+package com.baidu.acache;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

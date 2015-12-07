@@ -1,4 +1,4 @@
-package com.xushuda.cache.driver;
+package com.baidu.acache.driver;
 
 public interface CacheDriverFactory {
 

@@ -1,4 +1,4 @@
-package com.xushuda.cache.model;
+package com.baidu.acache.model;
 
 import java.util.Map;
 

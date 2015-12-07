@@ -1,4 +1,4 @@
-package com.xushuda.cache.entry;
+package com.baidu.acache.entry;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -8,12 +8,12 @@ import java.lang.annotation.Target;
 
 /**
  * 对Cached注解的方法，有如下注意事项：<br>
- * 1、paramK和resultK使用spring expression language。<br>
+ * 1、keyInParam和keyInResult使用spring expression language。<br>
  * 对于map类型的对象，上下文对象为一个Map.Entry <br>
  * 对于一般的集合对象，上下文对象为一个元素Element <br>
- * 2、paramK这个方法用于从参数集合中获取key，来访问缓存 , resultK这个方法用于从结果集合中获取key，用以缓存数据。<br>
- * 所以对于某数据，从paramK，resultK得到的key必须一致 <br>
- * 3、paramK不为空，resultK为空的情况是错误的,因为不可能返回值只有一个key<br>
+ * 2、paramK这个方法用于从参数集合中获取key，来访问缓存 , keyInResult这个方法用于从结果集合中获取key，用以缓存数据。<br>
+ * 所以对于某数据，从keyInParam，keyInResult得到的key必须一致 <br>
+ * 3、keyInParam不为空，keyInResult为空的情况是错误的,因为不可能返回值只有一个key<br>
  * 4、在生成key的过程中，会调用参数（聚合Invok则调用集合element）的hashCode函数，<br>
  * 所以务必确保不在ignList中的参数都正确地重写了hashCode函数，不是简单返回对象的内存地址
  * 
@@ -24,12 +24,13 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface Cached {
+
     /**
-     * the Cache driver used
+     * the Cache driver used 为实现类的bean name 默认为DefaultCacheDriver
      * 
      * @return
      */
-    String driver() default "DefaultDriver";
+    String driver() default "DefaultCacheDriver";
 
     /**
      * the expire of the data in second
@@ -44,18 +45,18 @@ public @interface Cached {
      * 对于map类型的对象，上下文对象为一个Map.Entry <br>
      * 对于一般的集合对象，上下文对象为一个元素Element <br>
      * 
-     * @return
+     * @return Spring el 表达式
      */
-    String paramK() default "";
+    String keyInParam() default "";
 
     /**
-     * 从集合类的结果集中获取缓存的key 如果与paramK()都为空， 则表示该方法不使用 批量请求方式 <br>
+     * 从集合类的结果集中获取缓存的key 如果与keyInParam()都为空， 则表示该方法不使用 批量请求方式 <br>
      * 对于map类型的对象，上下文对象为一个Map.Entry <br>
      * 对于一般的集合对象，上下文对象为一个元素Element <br>
      * 
-     * @return
+     * @return Spring el 表达式
      */
-    String resultK() default "";
+    String keyInResult() default "";
 
     /**
      * 只有当批量请求有最大请求条数限制的时候才使用这个字段 <br>
@@ -74,4 +75,8 @@ public @interface Cached {
      */
     int[] ignList() default {};
 
+    /**
+     * key的命名空间，默认空字符串则为函数签名
+     */
+    String nameSpace() default "";
 }

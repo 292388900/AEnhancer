@@ -1,10 +1,10 @@
-package com.xushuda.cache.model;
+package com.baidu.acache.model;
 
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 
-import com.xushuda.cache.exception.IllegalParamException;
+import com.baidu.acache.exception.IllegalParamException;
 
 /**
  * annotation info
@@ -14,12 +14,13 @@ import com.xushuda.cache.exception.IllegalParamException;
  */
 public class AnnotationInfo {
 
-    Expression extractFromParam;
-    Expression extractFromResult;
-    int[] ignList;
-    int batchSize;
-    int expiration;
-    String driverBeanName;
+    private Expression extractFromParam;
+    private Expression extractFromResult;
+    private int[] ignList;
+    private int batchSize;
+    private int expiration;
+    private String driverBeanName;
+    private String nameSpace;
 
     public boolean validateExt() {
         if (extractFromResult == null && extractFromParam != null) {
@@ -52,8 +53,8 @@ public class AnnotationInfo {
         this.driverBeanName = driverBeanName;
     }
 
-    public AnnotationInfo(String etParam, String etResult, int batchSize, String driverBeanName,
-            int expiration, int[] ignList) {
+    public AnnotationInfo(String etParam, String etResult, int batchSize, String driverBeanName, int expiration,
+            int[] ignList, String nameSpace) {
         SpelExpressionParser parser = new SpelExpressionParser();
 
         // annotation spring expression language
@@ -67,16 +68,21 @@ public class AnnotationInfo {
         this.batchSize = batchSize;
         this.driverBeanName = driverBeanName;
         this.ignList = ignList;
+        this.nameSpace = nameSpace;
     }
 
     /**
-     * 是否使用batch 批量、拆分式的请求查询方式
+     * 是否使用聚合方式缓存，
      * 
-     * @return
+     * @return true，使用aggr方式缓存，即对对象和
      * @throws IllegalParamException
      */
     public boolean aggrInvok() {
         return null != extractFromResult || null != extractFromParam;
+    }
+
+    public String getNameSpace() {
+        return nameSpace;
     }
 
     /**
@@ -98,7 +104,7 @@ public class AnnotationInfo {
      * 从result中获取key
      * 
      * @param resultElement
-     * @return
+     * @return 
      * @throws IllegalParamException
      */
     public Object extResult(Object resultElement) throws IllegalParamException {

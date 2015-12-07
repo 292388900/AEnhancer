@@ -1,11 +1,11 @@
-package com.xushuda.cache.entry;
+package com.baidu.acache.entry;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.xushuda.cache.processor.CacheFrontProcessor;
+import com.baidu.acache.processor.CacheFrontProcessor;
 
 /**
  * 定义不同的pointcut

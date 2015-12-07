@@ -1,8 +1,8 @@
-package com.xushuda.cache.model;
+package com.baidu.acache.model;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 
-import com.xushuda.cache.exception.IllegalParamException;
+import com.baidu.acache.exception.IllegalParamException;
 
 /**
  * hold thread local variable to provide info of signature and annotation
@@ -145,12 +145,12 @@ public class MethodInfo {
     }
 
     /**
-     * 获取SignatureStr,包括包名
+     * 获取keySpace
      * 
      * @return
      */
-    public String getSignatureStr() {
-        return signature.getSignature();
+    public String getNameSpace() {
+        return annotation.getNameSpace().equals("") ? signature.getSignature() : annotation.getNameSpace();
     }
 
 }

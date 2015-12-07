@@ -9,13 +9,13 @@
             http://www.springframework.org/schema/aop 
             http://www.springframework.org/schema/aop/spring-aop-3.1.xsd">
 
-	<context:component-scan base-package="com.xushuda.cache" />
+	<context:component-scan base-package="com.baidu.acache" />
 	<!-- annotation driven cache -->
 	<aop:aspectj-autoproxy />
 	<bean
 		class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor" />
-	<bean id="cacheAop" class="com.xushuda.cache.entry.CachePointCut"></bean>
-	<bean name="DefaultDriver" class="com.xushuda.cache.RedisHa" />
+	<bean id="cacheAop" class="com.baidu.acache.entry.CachePointCut"></bean>
+	<bean name="DefaultCacheDriver" class="com.baidu.acache.RedisHa" />
 
 	<bean
 		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">

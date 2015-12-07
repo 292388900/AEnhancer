@@ -1,4 +1,4 @@
-package com.xushuda.cache.exception;
+package com.baidu.acache.exception;
 
 /**
  * all the exception should be derived from this class

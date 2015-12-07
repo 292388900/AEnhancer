@@ -1,4 +1,4 @@
-package com.xushuda.cache.model;
+package com.baidu.acache.model;
 
 import java.io.Serializable;
 import java.lang.reflect.Modifier;
@@ -17,7 +17,7 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import com.xushuda.cache.exception.IllegalParamException;
+import com.baidu.acache.exception.IllegalParamException;
 
 /**
  * aggregation 类型, 可以处理的类型有Map的子类，Collection的子类，还有数组类型 <br>

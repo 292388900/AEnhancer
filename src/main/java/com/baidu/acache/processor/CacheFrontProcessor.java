@@ -1,4 +1,4 @@
-package com.xushuda.cache.processor;
+package com.baidu.acache.processor;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
@@ -7,13 +7,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.xushuda.cache.entry.Cached;
-import com.xushuda.cache.exception.CacheAopException;
-import com.xushuda.cache.exception.IllegalParamException;
-import com.xushuda.cache.model.Aggregation;
-import com.xushuda.cache.model.AnnotationInfo;
-import com.xushuda.cache.model.MethodInfo;
-import com.xushuda.cache.model.SignatureInfo;
+import com.baidu.acache.entry.Cached;
+import com.baidu.acache.exception.CacheAopException;
+import com.baidu.acache.exception.IllegalParamException;
+import com.baidu.acache.model.Aggregation;
+import com.baidu.acache.model.AnnotationInfo;
+import com.baidu.acache.model.MethodInfo;
+import com.baidu.acache.model.SignatureInfo;
 
 /**
  * the processor
@@ -36,14 +36,14 @@ public class CacheFrontProcessor {
      * @return
      * @throws IllegalParamException
      */
-    private SignatureInfo parseSignature(ProceedingJoinPoint jp, boolean useBatchCall) throws IllegalParamException {
+    private SignatureInfo parseSignature(ProceedingJoinPoint jp, boolean useAggrInvok) throws IllegalParamException {
         Class<?> retType = ((MethodSignature) jp.getSignature()).getReturnType();
         Class<?>[] paramTypes = ((MethodSignature) jp.getSignature()).getParameterTypes();
         Class<?> aggParamType = null;
         int aggregation = 0;
         int position = 0; // the position of the aggregation
 
-        if (null != paramTypes && useBatchCall) {
+        if (null != paramTypes && useAggrInvok) {
             for (Class<?> paramType : paramTypes) {
                 if (Aggregation.isAggregationType(paramType)) {
                     // fail fast 不符合期望
@@ -69,8 +69,8 @@ public class CacheFrontProcessor {
      * @return
      */
     private AnnotationInfo parseAnnotation(Cached cached) {
-        return new AnnotationInfo(cached.paramK(), cached.resultK(), cached.batchLimit(), cached.driver(),
-                cached.expiration(), cached.ignList());
+        return new AnnotationInfo(cached.keyInParam(), cached.keyInResult(), cached.batchLimit(), cached.driver(),
+                cached.expiration(), cached.ignList(), cached.nameSpace());
     }
 
     /**
@@ -95,7 +95,9 @@ public class CacheFrontProcessor {
     }
 
     /**
-     * around 入口
+     * around 入口,这个方法会捕获所有runtimeException（可能由cacheDriver抛出，比如网络异常） <br>
+     * 还有所有CacheAopException的子类，由于这里都会统一捕获，都为受检异常（实际上，某些不希望被捕获的异常，比如代码有问题
+     * ：annotation与方法的签名无法匹配，应该为runtimeException，但是这里都统一捕获了，所以不做区分）
      * 
      * @param jp
      * @param cached
@@ -108,7 +110,7 @@ public class CacheFrontProcessor {
         // 解析函数签名
         SignatureInfo signature = parseSignature(jp, annotation.aggrInvok());
         // validate the signature and annotation
-        validate(signature, annotation); 
+        validate(signature, annotation);
         // 生成methodInfo对象
         MethodInfo methodInfo = new MethodInfo(signature, annotation, jp);
         // fail fast,在这之前抛出的异常都是由于编码的错误，所以，不应该捕获
