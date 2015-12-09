@@ -19,7 +19,7 @@ public class BeanMock {
         return ++x;
     }
 
-    @Cached(keyInParam = "T(java.lang.Math).PI", keyInResult = "getKey()", nameSpace = "test")
+    @Cached(keyInParam = "T(java.lang.Math).PI", keyInResult = "#this.getKey()", nameSpace = "test")
     public Map<Integer, String> testGetList(ConcurrentHashMap<Integer, String> param) {
         Map<Integer, String> ret = new HashMap<Integer, String>();
         for (Entry<Integer, String> pi : param.entrySet()) {
