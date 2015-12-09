@@ -1,7 +1,6 @@
 package com.baidu.acache.entry;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 import com.baidu.acache.driver.DefaultCacheDriverFactory;
 
@@ -11,7 +10,6 @@ import com.baidu.acache.driver.DefaultCacheDriverFactory;
  * @author xushuda
  *
  */
-@Service
 public class CacheCommander {
 
     @Autowired

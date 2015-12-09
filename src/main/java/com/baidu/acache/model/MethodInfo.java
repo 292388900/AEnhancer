@@ -1,6 +1,8 @@
 package com.baidu.acache.model;
 
 import org.aspectj.lang.ProceedingJoinPoint;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.baidu.acache.exception.IllegalParamException;
 
@@ -11,6 +13,8 @@ import com.baidu.acache.exception.IllegalParamException;
  *
  */
 public class MethodInfo {
+
+    private static final Logger logger = LoggerFactory.getLogger(MethodInfo.class);
     private SignatureInfo signature;
     private AnnotationInfo annotation;
     private Object[] clonedArgsRef;
@@ -30,7 +34,7 @@ public class MethodInfo {
     /**
      * 获取原参数中聚合位置的参数对象
      * 
-     * @return
+     * @return 如果不存在Aggr调用，则返回null
      */
     public Object getOrgAggrParam() {
         return orgAggrArgs;
@@ -40,20 +44,31 @@ public class MethodInfo {
      * 获取克隆的原始参数的引用，所以，直接修改这个数组的的内容不会对原对象产生影响<br>
      * 但是是不能修改数组中引用的对象
      * 
-     * @return
+     * @return cloned的参数数组
      */
     public Object[] getArgs() {
         return clonedArgsRef;
     }
 
     /**
-     * 从原始接口调用
+     * 从原始接口调用，会根据annotation中的重试次数重试
      * 
-     * @param args
-     * @return
-     * @throws Throwable
+     * @param args 参数
+     * @return 返回按照给入参数调用原方法的结果
+     * @throws Throwable 异常
      */
     public Object proceedWith(Object[] args) throws Throwable {
+        // 在最后一次重试前都catch所有异常
+        for (int retryTimes = annotation.getRetryTimes(); retryTimes > 1; --retryTimes) {
+            try {
+                jp.proceed(args);
+            } catch (Throwable th) {
+                logger.info("error whe calling {}, exception: {}, left ret times: {}", signature.getSignature(), th,
+                        retryTimes - 1);
+            }
+        }
+
+        // 最后一次重试如果有异常则抛出
         return jp.proceed(args);
     }
 
@@ -151,6 +166,23 @@ public class MethodInfo {
      */
     public String getNameSpace() {
         return annotation.getNameSpace().equals("") ? signature.getSignature() : annotation.getNameSpace();
+    }
+
+    /**
+     * 是否是聚合式调用
+     * 
+     * @return
+     */
+    public boolean aggrInvok() {
+        return annotation.aggrInvok();
+    }
+
+    /**
+     * 
+     * @return
+     */
+    public boolean relyOnSeqResult() {
+        return annotation.isResultSequential();
     }
 
 }

@@ -4,11 +4,8 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 import com.baidu.acache.entry.Cached;
-import com.baidu.acache.exception.CacheAopException;
 import com.baidu.acache.exception.IllegalParamException;
 import com.baidu.acache.model.Aggregation;
 import com.baidu.acache.model.AnnotationInfo;
@@ -16,16 +13,12 @@ import com.baidu.acache.model.MethodInfo;
 import com.baidu.acache.model.SignatureInfo;
 
 /**
- * the processor
+ * the processor 解析函数签名，注解等等
  * 
  * @author xushuda
  *
  */
-@Service
-public class CacheFrontProcessor {
-
-    @Autowired
-    private CacheDataProcessor cacheProcessor;
+public final class CacheFrontProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(CacheFrontProcessor.class);
 
@@ -66,11 +59,11 @@ public class CacheFrontProcessor {
      * parse Annotation
      * 
      * @param cached
-     * @return
+     * @return annotationInfo
+     * @throws IllegalParamException 
      */
-    private AnnotationInfo parseAnnotation(Cached cached) {
-        return new AnnotationInfo(cached.keyInParam(), cached.keyInResult(), cached.batchLimit(), cached.driver(),
-                cached.expiration(), cached.ignList(), cached.nameSpace());
+    private AnnotationInfo parseAnnotation(Cached cached) throws IllegalParamException {
+        return new AnnotationInfo(cached);
     }
 
     /**
@@ -82,8 +75,14 @@ public class CacheFrontProcessor {
      */
     private void validate(SignatureInfo sig, AnnotationInfo anno) throws IllegalParamException {
         // fail fast
-        if (!sig.aggrAccessible() && anno.aggrInvok()) {
-            throw new IllegalParamException("signatue conflict with annotation about weather use aggr invocation");
+        if (anno.aggrInvok()) { // 如果首先是聚合类调用
+            if (anno.isResultSequential()) { // 如果是顺序的聚合类调用
+                if (!sig.sequentialAggrAccessible()) {
+                    throw new IllegalParamException("the annotation constraints ret type and aggr param is sequential");
+                }
+            } else if (!sig.aggrAccessible()) { // 不是顺序的调用
+                throw new IllegalParamException("signatue conflict with annotation about weather use aggr invocation");
+            }
         }
         if (!anno.validateExt()) {
             throw new IllegalParamException("annotation is error,extK==null and extParam!=null");
@@ -95,16 +94,14 @@ public class CacheFrontProcessor {
     }
 
     /**
-     * around 入口,这个方法会捕获所有runtimeException（可能由cacheDriver抛出，比如网络异常） <br>
-     * 还有所有CacheAopException的子类，由于这里都会统一捕获，都为受检异常（实际上，某些不希望被捕获的异常，比如代码有问题
-     * ：annotation与方法的签名无法匹配，应该为runtimeException，但是这里都统一捕获了，所以不做区分）
+     * 
      * 
      * @param jp
      * @param cached
      * @return
-     * @throws Throwable
+     * @throws IllegalParamException
      */
-    public Object aopAround(ProceedingJoinPoint jp, Cached cached) throws Throwable {
+    public MethodInfo preProcess(ProceedingJoinPoint jp, Cached cached) throws IllegalParamException {
         // 解析注解
         AnnotationInfo annotation = parseAnnotation(cached);
         // 解析函数签名
@@ -116,32 +113,7 @@ public class CacheFrontProcessor {
         // fail fast,在这之前抛出的异常都是由于编码的错误，所以，不应该捕获
         // log
         logger.info("success getting methodInfo {}", methodInfo);
-        try {
-            // 根据不同的请求类型
-            if (!annotation.aggrInvok()) {
-                logger.info("start to retrive data from {} ", signature.toString());
-                return cacheProcessor.processNormal(methodInfo);
-            } else {
-                return cacheProcessor.processAggregated(methodInfo);
-            }
-        } catch (CacheAopException exp) {
-            // be careful, this kind of exception may caused by your incorrect code
-            logger.error("error occors in cache aop , caused by :", exp);
-            if (methodInfo.getBatchSize() > 0) {
-                return cacheProcessor.processAggregatedWithoutCache(methodInfo);
-            }
-            // return the original call
-            return jp.proceed(jp.getArgs());
-        } catch (RuntimeException rtExp) {
-            // swallow the runtime exception
-            logger.error("runtime exception occurs in cache aop , caused by :", rtExp);
-            // be careful about this kind of exception, the cache server may just crash
-            if (methodInfo.getBatchSize() > 0) {
-                return cacheProcessor.processAggregatedWithoutCache(methodInfo);
-            }
-            return jp.proceed(jp.getArgs());
-        }
+        return methodInfo;
 
     }
-
 }

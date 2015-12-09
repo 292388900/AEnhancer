@@ -67,12 +67,23 @@ public class SignatureInfo {
                 && Aggregation.isAggregationType(aggParamType);
     }
 
+    /**
+     * 返回参数和入参是否都是有序的
+     * 
+     * @return
+     */
+    public boolean sequentialAggrAccessible() {
+        return retType != null && aggParamType != null && Aggregation.isAggregationType(retType)
+                && Aggregation.isSequentialType(aggParamType);
+    }
+
     public boolean retMap() {
         return Map.class.isAssignableFrom(retType);
     }
 
     /**
-     * not used currently 
+     * not used currently
+     * 
      * @return
      */
     public boolean kvAggregated() {

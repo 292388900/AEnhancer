@@ -1,8 +1,10 @@
 package com.baidu.acache.model;
 
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -11,11 +13,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
-import java.util.TreeSet;
 
 import com.baidu.acache.exception.IllegalParamException;
 
@@ -75,6 +75,11 @@ public class Aggregation implements Iterable {
                 || Object[].class.isAssignableFrom(clazz);
     }
 
+    public static boolean isSequentialType(Class<?> cls) {
+        return Object[].class.isAssignableFrom(cls) || List.class.isAssignableFrom(cls)
+                || Queue.class.isAssignableFrom(cls); // linked list 
+    }
+
     private void assertAggregationType() throws IllegalParamException {
         if (!isAggregationType(target)) {
             throw new IllegalParamException("target class is not an appropriate aggregation type");
@@ -85,6 +90,18 @@ public class Aggregation implements Iterable {
         if (!Map.class.isAssignableFrom(target)) {
             throw new IllegalArgumentException(
                     "target class is not an appropriate aggregation type : is not a sub class of map");
+        }
+    }
+
+    /**
+     * 实例能赋值给cls（接口或者类）
+     * 
+     * @param cls
+     * @param instance
+     */
+    private void assertAssignable(Class<?> cls, Object instance) {
+        if (!cls.isAssignableFrom(instance.getClass())) {
+            throw new IllegalArgumentException("cls: " + cls + " is not supported aggregation");
         }
     }
 
@@ -188,12 +205,15 @@ public class Aggregation implements Iterable {
     public Object toInstance() throws InstantiationException, IllegalAccessException, IllegalParamException {
         Object aggregated = null;
 
+        // target是map的子类
         if (Map.class.isAssignableFrom(target)) {
             if (!target.isInterface() && !Modifier.isAbstract(target.getModifiers())) {
                 aggregated = target.newInstance();
-            } else if (SortedMap.class.isAssignableFrom(target)) {
+                // 如果是有序map
+            } else if (target.getClass().isAssignableFrom(SortedMap.class)) {
                 aggregated = new TreeMap();
             } else {
+                // 默认就是无序map
                 aggregated = new HashMap();
             }
 
@@ -201,20 +221,17 @@ public class Aggregation implements Iterable {
             for (Object obj : datas) {
                 ((Map) aggregated).put(((Cell) obj).getKey(), ((Cell) obj).getValue());
             }
+
+            // target是Collection的子类
         } else if (Collection.class.isAssignableFrom(target)) {
             if (!target.isInterface() && !Modifier.isAbstract(target.getModifiers())) {
                 aggregated = target.newInstance();
-            } else if (List.class.isAssignableFrom(target)) {
-                aggregated = new ArrayList();
-            } else if (Set.class.isAssignableFrom(target)) {
-                if (SortedSet.class.isAssignableFrom(target)) {
-                    aggregated = new TreeSet();
-                } else {
-                    aggregated = new HashSet();
-                }
-
-            } else if (Queue.class.isAssignableFrom(target)) {
+            } else if (target.getClass().isAssignableFrom(LinkedList.class)) {
                 aggregated = new LinkedList();
+            } else if (target.getClass().isAssignableFrom(HashSet.class)) {
+                aggregated = new HashSet();
+            } else {
+                aggregated = new ArrayList();
             }
 
             // add data
@@ -222,18 +239,19 @@ public class Aggregation implements Iterable {
                 ((Collection) aggregated).add(obj);
             }
         } else if (Object[].class.isAssignableFrom(target)) {
-            aggregated = new Object[datas.size()];
-            int pos = 0;
-
+            Class<?> componentType = target.getComponentType();
+            aggregated = Array.newInstance(componentType, datas.size());
             // add data
+            int pos = 0;
             for (Object obj : datas) {
-                ((Object[]) aggregated)[pos++] = obj;
+                Array.set(aggregated, pos++, componentType.cast(obj));
             }
         } else {
             throw new IllegalParamException("target class can't match any known collection " + target);
         }
+        // 最后需要再判断一次
+        assertAssignable(target, aggregated);
         return aggregated;
-
     }
 
     @Override
@@ -242,10 +260,32 @@ public class Aggregation implements Iterable {
     }
 
     /**
+     * 获取游戏聚合类型的迭代器
+     * 
+     * @param instance
+     * @return
+     * @throws IllegalParamException
+     */
+    public Iterator getSeqIteratorFromInstance(Object instance) throws IllegalParamException {
+        if (null == instance) {
+            throw new NullPointerException("the instance must not be null");
+        }
+        if (SortedMap.class.isAssignableFrom(instance.getClass())) {
+            return ((SortedMap) instance).entrySet().iterator();
+        } else if (SortedSet.class.isAssignableFrom(instance.getClass())) {
+            return ((SortedSet) instance).iterator();
+        } else if (Queue.class.isAssignableFrom(instance.getClass())) {
+            return Arrays.asList(instance).iterator();
+        } else {
+            throw new IllegalParamException("the instance is not an apporiate class: " + instance.getClass());
+        }
+    }
+
+    /**
      * 将集合按照batchSize来split成多个
      * 
      * @param batchSize
-     * @return
+     * @return List Aggregation列表
      * @throws IllegalParamException
      */
     public List<Aggregation> split(int batchSize) throws IllegalParamException {

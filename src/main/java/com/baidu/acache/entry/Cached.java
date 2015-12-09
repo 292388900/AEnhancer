@@ -13,8 +13,8 @@ import java.lang.annotation.Target;
  * 对于一般的集合对象，上下文对象为一个元素Element <br>
  * 2、paramK这个方法用于从参数集合中获取key，来访问缓存 , keyInResult这个方法用于从结果集合中获取key，用以缓存数据。<br>
  * 所以对于某数据，从keyInParam，keyInResult得到的key必须一致 <br>
- * 3、keyInParam不为空，keyInResult为空的情况是错误的,因为不可能返回值只有一个key<br>
- * 4、在生成key的过程中，会调用参数（聚合Invok则调用集合element）的hashCode函数，<br>
+ * 3、keyInParam不为空，keyInResult为空且keyInResultSeq=false的情况是错误的,因为无法从原函数的返回集合展开进行缓存<br>
+ * 4、在生成key的过程中，会调用参数（聚合Invok则调用参数的每个element）的hashCode()函数，<br>
  * 所以务必确保不在ignList中的参数都正确地重写了hashCode函数，不是简单返回对象的内存地址
  * 
  * @author xushuda
@@ -28,14 +28,14 @@ public @interface Cached {
     /**
      * the Cache driver used 为实现类的bean name 默认为DefaultCacheDriver
      * 
-     * @return
+     * @return driver的bean name
      */
     String driver() default "DefaultCacheDriver";
 
     /**
      * the expire of the data in second
      * 
-     * @return
+     * @return 超时时间 秒
      */
     int expiration() default 3600;
 
@@ -50,7 +50,7 @@ public @interface Cached {
     String keyInParam() default "";
 
     /**
-     * 从集合类的结果集中获取缓存的key 如果与keyInParam()都为空， 则表示该方法不使用 批量请求方式 <br>
+     * 从集合类的结果集中获取缓存的key 如果与keyInParam()都为空， 则表示该方法不使用 聚合请求方式 <br>
      * 对于map类型的对象，上下文对象为一个Map.Entry <br>
      * 对于一般的集合对象，上下文对象为一个元素Element <br>
      * 
@@ -59,9 +59,16 @@ public @interface Cached {
     String keyInResult() default "";
 
     /**
+     * 默认不同。所以用keyInResult来展开数据进行缓存,对于聚合类调用，必须满足：keyInResult不为空，或者keyInResultSeq不为false
+     * 
+     * @return 原方法返回的数据是不是跟param中的顺序相同
+     */
+    boolean resultSequential() default false;
+
+    /**
      * 只有当批量请求有最大请求条数限制的时候才使用这个字段 <br>
      * 
-     * @return
+     * @return 批量查询的一次请求大小限制
      */
     int batchLimit() default 0;
 
@@ -69,14 +76,24 @@ public @interface Cached {
      * 忽略的参数列表 (数字代表第几个参数)，如果忽略则对应位置参数不加入key的计算<br>
      * 初始位置为 0(第一个参数) <br>
      * 比如一些获取限制参数,过滤参数等等 <br>
-     * CAUTION: 如果使用了ignList(参数是状态信息)，可能需要在上层手动过滤一下
      * 
-     * @return
+     * @return 忽略参数列表
      */
     int[] ignList() default {};
 
     /**
      * key的命名空间，默认空字符串则为函数签名
+     * 
+     * @return nameSpace
      */
     String nameSpace() default "";
+
+    /**
+     * 重试次数，默认为一次，即：不重试，在重试的过程中（除去最后一次调用，最后一次调用还是会“诚实”地抛出异常）会catch所有的异常<br>
+     * ，所以，如果希望对受检异常的情况做特殊的重试处理，请不要使用这个参数
+     * 
+     * @return 重试次数
+     */
+    int retryTimes() default 1;
+
 }

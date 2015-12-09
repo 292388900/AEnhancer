@@ -1,27 +1,31 @@
 package com.baidu.acache;
 
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 public class TestEntry {
+
     /**
      * 手动读取context并加载
      * 
      * @param args
      */
-    public static void main(String[] args) {
+    public void testBasic() {
         ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
-        TestBean entry = context.getBean(TestBean.class);
+        BeanMock entry = context.getBean(BeanMock.class);
         Integer num = 5;
-        System.out.println(entry.testGet(num));
-        System.out.println(entry.testGet(num));
+        entry.testGet(num);
         ConcurrentHashMap<Integer, String> param = new ConcurrentHashMap<Integer, String>();
         param.put(5, "sd");
         param.put(6, "dde");
-        Map<Integer, String> data = entry.testGetList(param);
-        System.out.print(data);
+        entry.testGetList(param);
+        entry.get(4);
+        entry.getInt();
+        entry.getInt2(4);
+        entry.getStr();
+        entry.getStrs(new String[] { "a", "b" });
     }
+
 }

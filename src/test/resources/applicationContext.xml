@@ -14,8 +14,11 @@
 	<aop:aspectj-autoproxy />
 	<bean
 		class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor" />
-	<bean id="cacheAop" class="com.baidu.acache.entry.CachePointCut"></bean>
+	<bean id="cacheAop" class="com.baidu.acache.entry.CacheAspect"></bean>
+	<bean id="cacheFactory" class="com.baidu.acache.driver.DefaultCacheDriverFactory" />
+
 	<bean name="DefaultCacheDriver" class="com.baidu.acache.RedisHa" />
+	<bean name="NopDriver" class="com.baidu.acache.driver.NopCacheDriver" />
 
 	<bean
 		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
