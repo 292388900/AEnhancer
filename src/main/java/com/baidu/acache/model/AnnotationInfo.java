@@ -29,13 +29,6 @@ public class AnnotationInfo {
         return retryTimes;
     }
 
-    public boolean validateExt() {
-        if (extractFromResult == null && extractFromParam != null) {
-            return false;
-        }
-        return true;
-    }
-
     public int getBatchSize() {
         return batchSize;
     }
@@ -133,7 +126,7 @@ public class AnnotationInfo {
      * 从result中获取key
      * 
      * @param resultElement
-     * @return
+     * @return key
      * @throws IllegalParamException
      */
     public Object extResult(Object resultElement) throws IllegalParamException {

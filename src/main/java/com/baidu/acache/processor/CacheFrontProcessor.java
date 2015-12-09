@@ -60,14 +60,14 @@ public final class CacheFrontProcessor {
      * 
      * @param cached
      * @return annotationInfo
-     * @throws IllegalParamException 
+     * @throws IllegalParamException
      */
     private AnnotationInfo parseAnnotation(Cached cached) throws IllegalParamException {
         return new AnnotationInfo(cached);
     }
 
     /**
-     * validate
+     * validate 函数签名与注解是否有效并且正确
      * 
      * @param sig
      * @param anno
@@ -83,9 +83,6 @@ public final class CacheFrontProcessor {
             } else if (!sig.aggrAccessible()) { // 不是顺序的调用
                 throw new IllegalParamException("signatue conflict with annotation about weather use aggr invocation");
             }
-        }
-        if (!anno.validateExt()) {
-            throw new IllegalParamException("annotation is error,extK==null and extParam!=null");
         }
         if (!sig.aggrAccessible() && anno.getBatchSize() > 0) {
             throw new IllegalParamException(
