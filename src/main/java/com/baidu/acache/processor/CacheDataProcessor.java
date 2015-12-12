@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.baidu.acache.driver.CacheDriver;
+import com.baidu.acache.exception.IllegalParamException;
 import com.baidu.acache.exception.UnexpectedStateException;
 import com.baidu.acache.model.Aggregation;
 import com.baidu.acache.model.MethodInfo;
@@ -97,8 +98,10 @@ public class CacheDataProcessor {
         Iterator pIter = orignalAggregatedParam.iterator();
         Iterator rIter = cachedResult.iterator();
         while (pIter.hasNext()) {
+            // 同步遍历，同步跳过
             Object data = rIter.next();
             Object param = pIter.next();
+            // driver返回的null值被认为是没有缓存的
             if (data == null) {
                 unCachedParam.add(param);
             } else {
@@ -123,42 +126,11 @@ public class CacheDataProcessor {
             }
             // 集合大小不用强制一样，多个value对应一个key则会造成覆盖，但多个key对应一个value其实没有问题
             // assertSize(unCachedParam, unCachedResult);
+
+            // 缓存所有数据
             if (!unCachedResult.isEmpty()) {
-
-                // 生成批量缓存的kv
-                List<String> unCachedKeys = new LinkedList<String>();
-                List<Object> unCachedDatas = new LinkedList<Object>();
-
-                // 根据result获取key
-                if (!methodInfo.relyOnSeqResult()) {
-                    // 只遍历结果集
-                    for (Object resultElement : unCachedResult) {
-                        if (null == resultElement) {
-                            logger.error("the element got from procedure contains nill, which won't be saved to cache");
-                            continue;
-                        }
-                        unCachedKeys
-                                .add(getKey(methodInfo.replaceArgsWithKeys(methodInfo.getKeyFromResult(resultElement)),
-                                        methodInfo));
-                        unCachedDatas.add(resultElement);
-                    }
-                    assertSize(unCachedDatas, unCachedKeys);
-                } else { // rely on result is sequential
-                    assertSize(unCachedResult, unCachedParam);
-                    Iterator urIter = unCachedResult.iterator(); // uncached result iterator
-                    Iterator upIter = unCachedParam.iterator(); // uncached param iterator
-                    while (upIter.hasNext()) {
-                        // 同步遍历结果集和参数集
-                        unCachedKeys.add(getKey(
-                                methodInfo.replaceArgsWithKeys(methodInfo.getKeyFromParam(upIter.next())), methodInfo));
-                        unCachedDatas.add(urIter.next());
-                    }
-                }
-
                 // 缓存这部分数据
-                logger.info("unCached data (order is disrupted size {}) will be saved (expiration: {}) ",
-                        unCachedKeys.size(), methodInfo.getExpiration());
-                driver.setAll(unCachedKeys, unCachedDatas, methodInfo.getExpiration(), methodInfo.getNameSpace());
+                cacheUnCached(unCachedResult, unCachedParam, methodInfo, driver);
                 // 加入result的集合
                 result.add(unCachedResult);
             }
@@ -199,6 +171,54 @@ public class CacheDataProcessor {
             }
         }
         return result.toInstance();
+    }
+
+    @SuppressWarnings("rawtypes")
+    private void cacheUnCached(Aggregation unCachedResult, Aggregation unCachedParam, MethodInfo methodInfo,
+            CacheDriver driver) throws UnexpectedStateException, IllegalParamException {
+        assert !unCachedResult.isEmpty();
+        // 生成批量缓存的kv
+        List<String> unCachedKeys = new LinkedList<String>();
+        List<Object> unCachedDatas = new LinkedList<Object>();
+
+        // 根据result获取key
+        if (!methodInfo.relyOnSeqResult()) {
+            // 只遍历结果集
+            for (Object resultElement : unCachedResult) {
+                // XXX 注意：这里跳过了null的结果，如果原来接口返回null，则不将它缓存下来
+                if (null == resultElement) {
+                    logger.error("the element got from procedure contains nill, which won't be saved to cache");
+                    continue;
+                }
+                unCachedKeys.add(getKey(methodInfo.replaceArgsWithKeys(methodInfo.getKeyFromResult(resultElement)),
+                        methodInfo));
+                unCachedDatas.add(resultElement);
+            }
+            assertSize(unCachedDatas, unCachedKeys);
+        } else { // rely on result is sequential、
+            // 顺序的话，依赖参数与结果集的顺序。所以，大小必须一样
+            assertSize(unCachedResult, unCachedParam);
+            Iterator urIter = unCachedResult.iterator(); // uncached result iterator
+            Iterator upIter = unCachedParam.iterator(); // uncached param iterator
+            while (upIter.hasNext()) {
+                // 同步遍历结果集和参数集
+                Object uData = urIter.next();
+                Object uParam = upIter.next();
+                if (null != uData) { // XXX 这里与非顺序的是一样的，如果null就不缓存
+                    unCachedKeys.add(getKey(methodInfo.replaceArgsWithKeys(methodInfo.getKeyFromParam(uParam)),
+                            methodInfo));
+                    unCachedDatas.add(uData);
+                }
+            }
+
+        }
+        // 缓存这部分数据
+        logger.info("unCached data (order is disrupted size {}) will be saved (expiration: {}) ", unCachedKeys.size(),
+                methodInfo.getExpiration());
+        driver.setAll(unCachedKeys, unCachedDatas, methodInfo.getExpiration(), methodInfo.getNameSpace());
+        // 加入result的集合
+        // result.add(unCachedResult)
+
     }
 
     /**

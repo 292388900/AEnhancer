@@ -11,6 +11,10 @@ import org.aspectj.lang.Signature;
  *
  */
 public class SignatureInfo {
+    private Class<?> retType;
+    private Class<?> aggParamType;
+    private int position;
+    private String signature;
 
     public Class<?> getRetType() {
         return retType;
@@ -43,11 +47,6 @@ public class SignatureInfo {
     public void setSignature(String signature) {
         this.signature = signature;
     }
-
-    Class<?> retType;
-    Class<?> aggParamType;
-    int position;
-    String signature;
 
     /**
      * 
