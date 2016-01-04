@@ -61,7 +61,7 @@ public class MethodInfo {
         // 在最后一次重试前都catch所有异常
         for (int retryTimes = annotation.getRetryTimes(); retryTimes > 1; --retryTimes) {
             try {
-                jp.proceed(args);
+                return jp.proceed(args);
             } catch (Throwable th) {
                 logger.info("error whe calling {}, exception: {}, left ret times: {}", signature.getSignature(), th,
                         retryTimes - 1);
