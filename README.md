@@ -13,9 +13,9 @@ Light Weight Cache Infrastructure for Application
   @Cached
   public data get(param)
 ```
-	b)对集合类接口的使用：（按照data中的Id来缓存数据）
+	b)对集合类接口的使用：（spEL:按照data中的getId方法返回值来缓存数据）
 ```
-  @Cached(resultK=getId())
+  @Cached(resultK="getId()")
   public List<data> get(List<param>)
 ```
 	c)批量处理：

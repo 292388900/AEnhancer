@@ -60,7 +60,7 @@ public interface CacheDriver {
     public List<Object> getAll(List<String> keys, String nameSpace);
 
     /**
-     * flush one nameSpace
+     * flush one nameSpace 
      * 
      * @param nameSpace
      * @return 是否成功刷新
