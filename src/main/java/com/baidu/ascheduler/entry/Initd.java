@@ -1,16 +1,19 @@
-package com.baidu.ascheduler.processor;
+package com.baidu.ascheduler.entry;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.baidu.ascheduler.entry.Sched;
 import com.baidu.ascheduler.exception.IllegalParamException;
 import com.baidu.ascheduler.model.Aggregation;
 import com.baidu.ascheduler.model.AnnotationInfo;
 import com.baidu.ascheduler.model.ProcessContext;
 import com.baidu.ascheduler.model.SignatureInfo;
+import com.baidu.ascheduler.processor.AggrCacheProcessor;
+import com.baidu.ascheduler.processor.BatchProcessor;
+import com.baidu.ascheduler.processor.DecoratableProcessor;
+import com.baidu.ascheduler.processor.PlainInvokProcessor;
 
 /**
  * the processor 解析函数签名，注解等等
@@ -114,6 +117,7 @@ public final class Initd {
     }
 
     /**
+     * 正常的处理流程
      * 
      * @param ctx
      * @return
@@ -122,6 +126,28 @@ public final class Initd {
     public Object start(ProcessContext ctx) throws Throwable {
         DecoratableProcessor processor =
                 new AggrCacheProcessor().decorate(new BatchProcessor().decorate(new PlainInvokProcessor()));
+        return processor.process(ctx, ctx.getArgs());
+    }
+
+    /**
+     * 
+     * @param ctx
+     * @return
+     * @throws Throwable
+     */
+    public Object startPlain(ProcessContext ctx) throws Throwable {
+        DecoratableProcessor processor = new PlainInvokProcessor();
+        return processor.process(ctx, ctx.getArgs());
+    }
+
+    /**
+     * 
+     * @param ctx
+     * @return
+     * @throws Throwable
+     */
+    public Object startPlainWithBatch(ProcessContext ctx) throws Throwable {
+        DecoratableProcessor processor = new BatchProcessor().decorate(new PlainInvokProcessor());
         return processor.process(ctx, ctx.getArgs());
     }
 }

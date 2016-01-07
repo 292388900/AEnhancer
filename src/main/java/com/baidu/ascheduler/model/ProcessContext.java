@@ -1,8 +1,8 @@
 package com.baidu.ascheduler.model;
 
+import java.util.Random;
+
 import org.aspectj.lang.ProceedingJoinPoint;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.baidu.ascheduler.cache.driver.CacheDriver;
 import com.baidu.ascheduler.exception.IllegalParamException;
@@ -15,7 +15,8 @@ import com.baidu.ascheduler.exception.IllegalParamException;
  */
 public class ProcessContext {
 
-    private static final Logger logger = LoggerFactory.getLogger(ProcessContext.class);
+    private final long ctxId;
+    // private static final Logger logger = LoggerFactory.getLogger(ProcessContext.class);
     private SignatureInfo signature;
     private AnnotationInfo annotation;
     private Object[] clonedArgsRef; // 克隆的原参数
@@ -33,6 +34,7 @@ public class ProcessContext {
         if (annotation.aggrInvok()) {
             orgAggrArgs = clonedArgsRef[signature.getPosition()];
         }
+        ctxId = new Random().nextLong();
     }
 
     public CacheDriver getCacheDriver() {
@@ -69,17 +71,8 @@ public class ProcessContext {
      * @return 返回按照给入参数调用原方法的结果
      * @throws Throwable 异常
      */
-    public Object proceedWith(Object[] args) throws Throwable {
-        // 在最后一次重试前都catch所有异常
-        for (int retryTimes = annotation.getRetryTimes(); retryTimes > 1; --retryTimes) {
-            try {
-                return jp.proceed(args);
-            } catch (Throwable th) {
-                logger.info("error whe calling {}, exception: {}, left ret times: {}", signature.getSignature(), th,
-                        retryTimes - 1);
-            }
-        }
-
+    public Object invokeOrignialMethod(Object[] args) throws Throwable {
+        //
         // 最后一次重试如果有异常则抛出
         return jp.proceed(args);
     }
@@ -189,12 +182,20 @@ public class ProcessContext {
         return annotation.aggrInvok();
     }
 
+    public int getRetry() {
+        return annotation.getRetryTimes();
+    }
+
     /**
      * 
      * @return
      */
     public boolean relyOnSeqResult() {
         return annotation.isResultSequential();
+    }
+
+    public long getCtxId() {
+        return ctxId;
     }
 
 }

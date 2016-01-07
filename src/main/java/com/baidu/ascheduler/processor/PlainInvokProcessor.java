@@ -27,7 +27,7 @@ public class PlainInvokProcessor implements DecoratableProcessor {
         }
         // current start
         Object[] args = (Object[]) p;
-        return ctx.proceedWith(args);
+        return ctx.invokeOrignialMethod(args);
         // current end
     }
 }

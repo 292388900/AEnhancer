@@ -59,6 +59,13 @@ public @interface Sched {
     String result() default "";
 
     /**
+     * key的命名空间，默认空字符串则为函数签名
+     * 
+     * @return nameSpace
+     */
+    String nameSpace() default "";
+
+    /**
      * 默认不同。所以用keyInResult来展开数据进行缓存,对于聚合类调用，必须满足：keyInResult不为空，或者keyInResultSeq不为false
      * 
      * @return 原方法返回的数据是不是跟param中的顺序相同
@@ -80,13 +87,6 @@ public @interface Sched {
      * @return 忽略参数列表
      */
     int[] ignList() default {};
-
-    /**
-     * key的命名空间，默认空字符串则为函数签名
-     * 
-     * @return nameSpace
-     */
-    String nameSpace() default "";
 
     /**
      * 重试次数，默认为一次，即：不重试，在重试的过程中（除去最后一次调用，最后一次调用还是会“诚实”地抛出异常）会catch所有的异常<br>

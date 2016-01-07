@@ -45,7 +45,7 @@ public class ShouldDeleteProcessor {
         logger.info("data retrieved for key {} is {}", args, data);
         if (null == data) {
             logger.info("data doesn't exists in cache, start to call the target process with args {}", args);
-            data = ctx.proceedWith(args);
+            data = ctx.invokeOrignialMethod(args);
             if (null != data) {
                 driver.set(getKey(args, ctx), data, ctx.getExpiration(), ctx.getNameSpace());
                 logger.info("get data: {}, and saved to cache", data);
@@ -117,7 +117,7 @@ public class ShouldDeleteProcessor {
             for (Aggregation splited : unCachedParam.split(ctx.getBatchSize())) {
                 // get the data from target process
                 logger.info("unCached keys exist, call the target process to get data, keys args are : {}", splited);
-                Object rawResult = ctx.proceedWith(ctx.replaceArgsWithKeys(splited.toInstance()));
+                Object rawResult = ctx.invokeOrignialMethod(ctx.replaceArgsWithKeys(splited.toInstance()));
                 if (null != rawResult) {
                     logger.info("data is get from target process : {}", rawResult);
                     unCachedResult.addAll(rawResult);
@@ -162,7 +162,7 @@ public class ShouldDeleteProcessor {
             // the argument
             for (Aggregation splited : orignalAggregatedParam.split(ctx.getBatchSize())) {
                 // get the data from target process
-                Object rawResult = ctx.proceedWith(ctx.replaceArgsWithKeys(splited.toInstance()));
+                Object rawResult = ctx.invokeOrignialMethod(ctx.replaceArgsWithKeys(splited.toInstance()));
                 if (null != rawResult) {
                     logger.info("data is got from target process : {}", rawResult);
                     result.addAll(rawResult);
