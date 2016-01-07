@@ -4,6 +4,7 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.baidu.ascheduler.cache.driver.CacheDriver;
 import com.baidu.ascheduler.exception.IllegalParamException;
 
 /**
@@ -17,9 +18,12 @@ public class ProcessContext {
     private static final Logger logger = LoggerFactory.getLogger(ProcessContext.class);
     private SignatureInfo signature;
     private AnnotationInfo annotation;
-    private Object[] clonedArgsRef;
-    private Object orgAggrArgs;
-    private ProceedingJoinPoint jp;
+    private Object[] clonedArgsRef; // 克隆的原参数
+    private Object orgAggrArgs; // 原集合对象
+    private ProceedingJoinPoint jp; // join point
+    private CacheDriver cacheDriver;
+
+    // private Aggregation batchInvokAggr; // 不包含集合类外的参数
 
     public ProcessContext(SignatureInfo signature, AnnotationInfo annotation, ProceedingJoinPoint jp) {
         this.signature = signature;
@@ -29,6 +33,14 @@ public class ProcessContext {
         if (annotation.aggrInvok()) {
             orgAggrArgs = clonedArgsRef[signature.getPosition()];
         }
+    }
+
+    public CacheDriver getCacheDriver() {
+        return cacheDriver;
+    }
+
+    public void setCacheDriver(CacheDriver cacheDriver) {
+        this.cacheDriver = cacheDriver;
     }
 
     /**

@@ -18,9 +18,9 @@ import com.baidu.ascheduler.model.SignatureInfo;
  * @author xushuda
  *
  */
-public final class FrontProcessor {
+public final class Initd {
 
-    private static final Logger logger = LoggerFactory.getLogger(FrontProcessor.class);
+    private static final Logger logger = LoggerFactory.getLogger(Initd.class);
 
     /**
      * 解析 函数签名
@@ -98,19 +98,30 @@ public final class FrontProcessor {
      * @return
      * @throws IllegalParamException
      */
-    public ProcessContext preProcess(ProceedingJoinPoint jp, Sched cached) throws IllegalParamException {
+    public ProcessContext parse(ProceedingJoinPoint jp, Sched cached) throws IllegalParamException {
         // 解析注解
         AnnotationInfo annotation = parseAnnotation(cached);
         // 解析函数签名
         SignatureInfo signature = parseSignature(jp, annotation.aggrInvok());
         // validate the signature and annotation
         validate(signature, annotation);
-        // 生成methodInfo对象
-        ProcessContext methodInfo = new ProcessContext(signature, annotation, jp);
+        // 生成ctx对象
+        ProcessContext ctx = new ProcessContext(signature, annotation, jp);
         // fail fast,在这之前抛出的异常都是由于编码的错误，所以，不应该捕获
         // log
-        logger.info("success getting methodInfo {}", methodInfo);
-        return methodInfo;
+        logger.info("success getting ctx {}", ctx);
+        return ctx;
+    }
 
+    /**
+     * 
+     * @param ctx
+     * @return
+     * @throws Throwable
+     */
+    public Object start(ProcessContext ctx) throws Throwable {
+        DecoratableProcessor processor =
+                new AggrCacheProcessor().decorate(new BatchProcessor().decorate(new PlainInvokProcessor()));
+        return processor.process(ctx, ctx.getArgs());
     }
 }

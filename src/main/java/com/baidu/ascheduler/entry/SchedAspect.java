@@ -11,8 +11,8 @@ import com.baidu.ascheduler.cache.driver.CacheDriver;
 import com.baidu.ascheduler.cache.driver.CacheDriverFactory;
 import com.baidu.ascheduler.exception.SchedAopException;
 import com.baidu.ascheduler.model.ProcessContext;
-import com.baidu.ascheduler.processor.CacheProcessor;
-import com.baidu.ascheduler.processor.FrontProcessor;
+import com.baidu.ascheduler.processor.ShouldDeleteProcessor;
+import com.baidu.ascheduler.processor.Initd;
 
 /**
  * 定义Cached修饰的切点（point cut）和它的连接点（join point）处理
@@ -26,9 +26,9 @@ public class SchedAspect {
     private static final Logger logger = LoggerFactory.getLogger(SchedAspect.class);
 
     // 没有用spring托管
-    private FrontProcessor preProcessor = new FrontProcessor();
+    private Initd preProcessor = new Initd();
 
-    private CacheProcessor postProcessor = new CacheProcessor();
+    private ShouldDeleteProcessor postProcessor = new ShouldDeleteProcessor();
 
     @Autowired
     private CacheDriverFactory cacheDriverFactory;
@@ -47,24 +47,26 @@ public class SchedAspect {
         // 获取driver
         CacheDriver cacheDriver = cacheDriverFactory.getCacheDriver(cached.cache());
         // 预处理，这里抛出的异常是受检异常，应该直接抛出，所以不在try块中
-        ProcessContext methodInfo = preProcessor.preProcess(jp, cached);
-        // 处理数据
+        ProcessContext ctx = preProcessor.parse(jp, cached);
+        // TODO 将driver等的流程放入这里
+        preProcessor.start(ctx);
+        // TODO 将 处理数据 转变为
         try {
             logger.info("start to retrive data from: {} ", jp.getSignature().toLongString());
             Object ret = null;
             // 根据不同的请求类型
-            if (!methodInfo.aggrInvok()) {
-                ret = postProcessor.processNormal(methodInfo, cacheDriver);
+            if (!ctx.aggrInvok()) {
+                ret = postProcessor.processNormal(ctx, cacheDriver);
             } else {
-                ret = postProcessor.processAggregated(methodInfo, cacheDriver);
+                ret = postProcessor.processAggregated(ctx, cacheDriver);
             }
             logger.info("data retrieved is: {}", ret);
             return ret;
         } catch (SchedAopException exp) {
             // be careful, this kind of exception may caused by your incorrect code
             logger.error("revive error occors in cache aop , caused by :", exp);
-            if (methodInfo.getBatchSize() > 0) {
-                return postProcessor.processAggregatedWithoutCache(methodInfo);
+            if (ctx.getBatchSize() > 0) {
+                return postProcessor.processAggregatedWithoutCache(ctx);
             }
             // return the original call
             return jp.proceed(jp.getArgs());
@@ -72,8 +74,8 @@ public class SchedAspect {
             // swallow the runtime exception
             logger.error("revive runtime exception occurs in cache aop , caused by :", rtExp);
             // be careful about this kind of exception, the cache server may just crash
-            if (methodInfo.getBatchSize() > 0) {
-                return postProcessor.processAggregatedWithoutCache(methodInfo);
+            if (ctx.getBatchSize() > 0) {
+                return postProcessor.processAggregatedWithoutCache(ctx);
             }
             return jp.proceed(jp.getArgs());
         }

@@ -16,6 +16,7 @@ import java.util.Queue;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.baidu.ascheduler.exception.IllegalParamException;
 
@@ -77,7 +78,7 @@ public class Aggregation implements Iterable {
 
     public static boolean isSequentialType(Class<?> cls) {
         return Object[].class.isAssignableFrom(cls) || List.class.isAssignableFrom(cls)
-                || Queue.class.isAssignableFrom(cls); // linked list 
+                || Queue.class.isAssignableFrom(cls); // linked list
     }
 
     private void assertAggregationType() throws IllegalParamException {
@@ -317,5 +318,17 @@ public class Aggregation implements Iterable {
      */
     public int size() {
         return datas.size();
+    }
+
+    /**
+     * 返回拷贝
+     * 
+     * @return
+     * @throws IllegalParamException
+     */
+    public Aggregation newCopy() throws IllegalParamException {
+        Aggregation ret = new Aggregation(target);
+        ret.datas = new CopyOnWriteArrayList<Object>(datas);
+        return ret;
     }
 }
