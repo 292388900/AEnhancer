@@ -1,4 +1,4 @@
-package com.baidu.acache.driver;
+package com.baidu.ascheduler.cache.driver;
 
 public interface CacheDriverFactory {
 

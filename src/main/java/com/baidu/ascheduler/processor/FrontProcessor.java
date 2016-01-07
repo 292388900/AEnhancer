@@ -1,16 +1,16 @@
-package com.baidu.acache.processor;
+package com.baidu.ascheduler.processor;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.baidu.acache.entry.Cached;
-import com.baidu.acache.exception.IllegalParamException;
-import com.baidu.acache.model.Aggregation;
-import com.baidu.acache.model.AnnotationInfo;
-import com.baidu.acache.model.MethodInfo;
-import com.baidu.acache.model.SignatureInfo;
+import com.baidu.ascheduler.entry.Sched;
+import com.baidu.ascheduler.exception.IllegalParamException;
+import com.baidu.ascheduler.model.Aggregation;
+import com.baidu.ascheduler.model.AnnotationInfo;
+import com.baidu.ascheduler.model.ProcessContext;
+import com.baidu.ascheduler.model.SignatureInfo;
 
 /**
  * the processor 解析函数签名，注解等等
@@ -18,9 +18,9 @@ import com.baidu.acache.model.SignatureInfo;
  * @author xushuda
  *
  */
-public final class CacheFrontProcessor {
+public final class FrontProcessor {
 
-    private static final Logger logger = LoggerFactory.getLogger(CacheFrontProcessor.class);
+    private static final Logger logger = LoggerFactory.getLogger(FrontProcessor.class);
 
     /**
      * 解析 函数签名
@@ -62,7 +62,7 @@ public final class CacheFrontProcessor {
      * @return annotationInfo
      * @throws IllegalParamException
      */
-    private AnnotationInfo parseAnnotation(Cached cached) throws IllegalParamException {
+    private AnnotationInfo parseAnnotation(Sched cached) throws IllegalParamException {
         return new AnnotationInfo(cached);
     }
 
@@ -98,7 +98,7 @@ public final class CacheFrontProcessor {
      * @return
      * @throws IllegalParamException
      */
-    public MethodInfo preProcess(ProceedingJoinPoint jp, Cached cached) throws IllegalParamException {
+    public ProcessContext preProcess(ProceedingJoinPoint jp, Sched cached) throws IllegalParamException {
         // 解析注解
         AnnotationInfo annotation = parseAnnotation(cached);
         // 解析函数签名
@@ -106,7 +106,7 @@ public final class CacheFrontProcessor {
         // validate the signature and annotation
         validate(signature, annotation);
         // 生成methodInfo对象
-        MethodInfo methodInfo = new MethodInfo(signature, annotation, jp);
+        ProcessContext methodInfo = new ProcessContext(signature, annotation, jp);
         // fail fast,在这之前抛出的异常都是由于编码的错误，所以，不应该捕获
         // log
         logger.info("success getting methodInfo {}", methodInfo);

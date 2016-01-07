@@ -1,11 +1,11 @@
-package com.baidu.acache.model;
+package com.baidu.ascheduler.model;
 
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 
-import com.baidu.acache.entry.Cached;
-import com.baidu.acache.exception.IllegalParamException;
+import com.baidu.ascheduler.entry.Sched;
+import com.baidu.ascheduler.exception.IllegalParamException;
 
 /**
  * annotation info
@@ -47,10 +47,10 @@ public class AnnotationInfo {
      * @param cached
      * @throws IllegalParamException
      */
-    public AnnotationInfo(Cached cached) throws IllegalParamException {
+    public AnnotationInfo(Sched cached) throws IllegalParamException {
         SpelExpressionParser parser = new SpelExpressionParser();
-        String etParam = cached.keyInParam();
-        String etResult = cached.keyInResult();
+        String etParam = cached.param();
+        String etResult = cached.result();
         // annotation spring expression language
         if (null != etParam && !"".equals(etParam)) {
             extractFromParam = parser.parseExpression(etParam);
@@ -64,11 +64,11 @@ public class AnnotationInfo {
         }
         this.expiration = cached.expiration();
         this.batchSize = cached.batchLimit();
-        this.driverBeanName = cached.driver();
+        this.driverBeanName = cached.cache();
         this.ignList = cached.ignList();
         this.nameSpace = cached.nameSpace();
-        this.retryTimes = cached.retryTimes();
-        isResultSequential = cached.resultSequential();
+        this.retryTimes = cached.retry();
+        isResultSequential = cached.sequential();
         assertLegal();
     }
 

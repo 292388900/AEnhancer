@@ -1,10 +1,10 @@
-package com.baidu.acache.model;
+package com.baidu.ascheduler.model;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.baidu.acache.exception.IllegalParamException;
+import com.baidu.ascheduler.exception.IllegalParamException;
 
 /**
  * hold thread local variable to provide info of signature and annotation
@@ -12,16 +12,16 @@ import com.baidu.acache.exception.IllegalParamException;
  * @author xushuda
  *
  */
-public class MethodInfo {
+public class ProcessContext {
 
-    private static final Logger logger = LoggerFactory.getLogger(MethodInfo.class);
+    private static final Logger logger = LoggerFactory.getLogger(ProcessContext.class);
     private SignatureInfo signature;
     private AnnotationInfo annotation;
     private Object[] clonedArgsRef;
     private Object orgAggrArgs;
     private ProceedingJoinPoint jp;
 
-    public MethodInfo(SignatureInfo signature, AnnotationInfo annotation, ProceedingJoinPoint jp) {
+    public ProcessContext(SignatureInfo signature, AnnotationInfo annotation, ProceedingJoinPoint jp) {
         this.signature = signature;
         this.annotation = annotation;
         this.jp = jp;

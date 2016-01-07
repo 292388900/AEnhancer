@@ -1,4 +1,4 @@
-package com.baidu.acache.exception;
+package com.baidu.ascheduler.exception;
 
 /**
  * Illegal param exception
@@ -6,7 +6,7 @@ package com.baidu.acache.exception;
  * @author xushuda
  *
  */
-public class IllegalParamException extends CacheAopException {
+public class IllegalParamException extends SchedAopException {
 
     /**
      * default serialVersionUID

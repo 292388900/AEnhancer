@@ -1,4 +1,4 @@
-package com.baidu.acache.entry;
+package com.baidu.ascheduler.entry;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -23,14 +23,14 @@ import java.lang.annotation.Target;
 @Target({ ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface Cached {
+public @interface Sched {
 
     /**
      * the Cache driver used 为实现类的bean name 默认为DefaultCacheDriver
      * 
      * @return driver的bean name
      */
-    String driver() default "DefaultCacheDriver";
+    String cache() default "DefaultCacheDriver";
 
     /**
      * the expire of the data in second
@@ -47,7 +47,7 @@ public @interface Cached {
      * 
      * @return Spring el 表达式
      */
-    String keyInParam() default "";
+    String param() default "";
 
     /**
      * 从集合类的结果集中获取缓存的key 如果与keyInParam()都为空， 则表示该方法不使用 聚合请求方式 <br>
@@ -56,14 +56,14 @@ public @interface Cached {
      * 
      * @return Spring el 表达式
      */
-    String keyInResult() default "";
+    String result() default "";
 
     /**
      * 默认不同。所以用keyInResult来展开数据进行缓存,对于聚合类调用，必须满足：keyInResult不为空，或者keyInResultSeq不为false
      * 
      * @return 原方法返回的数据是不是跟param中的顺序相同
      */
-    boolean resultSequential() default false;
+    boolean sequential() default false;
 
     /**
      * 只有当批量请求有最大请求条数限制的时候才使用这个字段 <br>
@@ -94,6 +94,6 @@ public @interface Cached {
      * 
      * @return 重试次数
      */
-    int retryTimes() default 1;
+    int retry() default 1;
 
 }

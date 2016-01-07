@@ -9,17 +9,17 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.stereotype.Service;
 
-import com.baidu.acache.entry.Cached;
+import com.baidu.ascheduler.entry.Sched;
 
 @Service
 public class BeanMock {
 
-    @Cached
+    @Sched
     public Integer testGet(Integer x) {
         return ++x;
     }
 
-    @Cached(keyInParam = "T(java.lang.Math).PI", keyInResult = "#this.getKey()", nameSpace = "test")
+    @Sched(param = "T(java.lang.Math).PI", result = "#this.getKey()", nameSpace = "test")
     public Map<Integer, String> testGetList(ConcurrentHashMap<Integer, String> param) {
         Map<Integer, String> ret = new HashMap<Integer, String>();
         for (Entry<Integer, String> pi : param.entrySet()) {
@@ -30,7 +30,7 @@ public class BeanMock {
 
     boolean throwEx = true;
 
-    @Cached(retryTimes = 2)
+    @Sched(retry = 2)
     public Integer get(Integer x) {
         if (throwEx) {
             throwEx = false;
@@ -39,22 +39,22 @@ public class BeanMock {
         return x;
     }
 
-    @Cached
+    @Sched
     public Integer getInt() {
         return 5;
     }
 
-    @Cached(ignList = 0)
+    @Sched(ignList = 0)
     public Integer getInt2(Integer f) {
         return 6;
     }
 
-    @Cached(driver = "NopDriver")
+    @Sched(cache = "NopDriver")
     public String getStr() {
         return "OK";
     }
 
-    @Cached(driver = "NopDriver", resultSequential = true)
+    @Sched(cache = "NopDriver", sequential = true)
     public List<String> getStrs(String[] args) {
         return Arrays.asList(args);
     }

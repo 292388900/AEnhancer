@@ -1,4 +1,4 @@
-package com.baidu.acache.exception;
+package com.baidu.ascheduler.exception;
 
 /**
  * all the exception should be derived from this class
@@ -6,14 +6,14 @@ package com.baidu.acache.exception;
  * @author xushuda
  *
  */
-public abstract class CacheAopException extends Exception {
+public abstract class SchedAopException extends Exception {
 
     /**
      * default serialVersionUID
      */
     private static final long serialVersionUID = 1L;
 
-    public CacheAopException(String message) {
+    public SchedAopException(String message) {
         super(message);
     }
 }

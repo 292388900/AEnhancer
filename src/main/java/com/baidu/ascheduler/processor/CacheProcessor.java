@@ -1,4 +1,4 @@
-package com.baidu.acache.processor;
+package com.baidu.ascheduler.processor;
 
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -9,11 +9,11 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.baidu.acache.driver.CacheDriver;
-import com.baidu.acache.exception.IllegalParamException;
-import com.baidu.acache.exception.UnexpectedStateException;
-import com.baidu.acache.model.Aggregation;
-import com.baidu.acache.model.MethodInfo;
+import com.baidu.ascheduler.cache.driver.CacheDriver;
+import com.baidu.ascheduler.exception.IllegalParamException;
+import com.baidu.ascheduler.exception.UnexpectedStateException;
+import com.baidu.ascheduler.model.Aggregation;
+import com.baidu.ascheduler.model.ProcessContext;
 
 /**
  * 与cacheDrive的接口交互，处理Cache 所有获取为null的元素，视为可能远程的失败，不做存储<br>
@@ -22,9 +22,9 @@ import com.baidu.acache.model.MethodInfo;
  * @author xushuda
  *
  */
-public class CacheDataProcessor {
+public class CacheProcessor {
 
-    private static final Logger logger = LoggerFactory.getLogger(CacheDataProcessor.class);
+    private static final Logger logger = LoggerFactory.getLogger(CacheProcessor.class);
 
     private static final String FIXED = "FIXED";
 
@@ -38,7 +38,7 @@ public class CacheDataProcessor {
      * @return
      * @throws Throwable
      */
-    public Object processNormal(MethodInfo methodInfo, CacheDriver driver) throws Throwable {
+    public Object processNormal(ProcessContext methodInfo, CacheDriver driver) throws Throwable {
         Object[] args = methodInfo.getArgs(); // a new copy
         // CacheDriver driver = fac.getCacheDriver(methodInfo.getDriver());
         Object data = driver.get(getKey(args, methodInfo), methodInfo.getNameSpace());
@@ -66,7 +66,7 @@ public class CacheDataProcessor {
      * @throws Throwable
      */
     @SuppressWarnings({ "rawtypes" })
-    public Object processAggregated(MethodInfo methodInfo, CacheDriver driver) throws Throwable {
+    public Object processAggregated(ProcessContext methodInfo, CacheDriver driver) throws Throwable {
         if (methodInfo.getOrgAggrParam() == null) {
             throw new NullPointerException("the aggregation param (Collection or Map) should not be null ");
         }
@@ -108,6 +108,7 @@ public class CacheDataProcessor {
                 result.add(data);
             }
         }
+        // TODO 
         // 从接口query新的数据，并加入result集合
         if (!unCachedParam.isEmpty()) {
             // 将多次调用的值都放入unCachedResult中
@@ -126,7 +127,7 @@ public class CacheDataProcessor {
             }
             // 集合大小不用强制一样，多个value对应一个key则会造成覆盖，但多个key对应一个value其实没有问题
             // assertSize(unCachedParam, unCachedResult);
-
+// TODO end to 
             // 缓存所有数据
             if (!unCachedResult.isEmpty()) {
                 // 缓存这部分数据
@@ -149,7 +150,7 @@ public class CacheDataProcessor {
      * @return
      * @throws Throwable
      */
-    public Object processAggregatedWithoutCache(MethodInfo methodInfo) throws Throwable {
+    public Object processAggregatedWithoutCache(ProcessContext methodInfo) throws Throwable {
         if (methodInfo.getOrgAggrParam() == null) {
             throw new NullPointerException("the argument for aggrgation as (Collection or Map) should not be null ");
         }
@@ -174,7 +175,7 @@ public class CacheDataProcessor {
     }
 
     @SuppressWarnings("rawtypes")
-    private void cacheUnCached(Aggregation unCachedResult, Aggregation unCachedParam, MethodInfo methodInfo,
+    private void cacheUnCached(Aggregation unCachedResult, Aggregation unCachedParam, ProcessContext methodInfo,
             CacheDriver driver) throws UnexpectedStateException, IllegalParamException {
         assert !unCachedResult.isEmpty();
         // 生成批量缓存的kv
@@ -255,7 +256,7 @@ public class CacheDataProcessor {
      * @param methodInfo
      * @return
      */
-    private String getKey(Object[] args, MethodInfo methodInfo) {
+    private String getKey(Object[] args, ProcessContext methodInfo) {
         if (args != null) {
             // get the key's prefix
             StringBuilder key = new StringBuilder();

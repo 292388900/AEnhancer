@@ -1,4 +1,4 @@
-package com.baidu.acache.model;
+package com.baidu.ascheduler.model;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;
@@ -17,7 +17,7 @@ import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
 
-import com.baidu.acache.exception.IllegalParamException;
+import com.baidu.ascheduler.exception.IllegalParamException;
 
 /**
  * aggregation 类型, 可以处理的类型有Map的子类，Collection的子类，还有数组类型 <br>

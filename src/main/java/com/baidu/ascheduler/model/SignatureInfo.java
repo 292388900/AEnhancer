@@ -1,4 +1,4 @@
-package com.baidu.acache.model;
+package com.baidu.ascheduler.model;
 
 import java.util.Map;
 

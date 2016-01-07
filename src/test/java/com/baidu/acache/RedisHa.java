@@ -12,7 +12,7 @@ import javax.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.baidu.acache.driver.CacheDriver;
+import com.baidu.ascheduler.cache.driver.CacheDriver;
 import com.baidu.unbiz.redis.RedisCacheManager;
 
 /**

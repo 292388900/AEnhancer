@@ -1,4 +1,4 @@
-package com.baidu.acache.exception;
+package com.baidu.ascheduler.exception;
 
 /**
  * the storage is in unexpected state <br>
@@ -7,7 +7,7 @@ package com.baidu.acache.exception;
  * @author xushuda
  *
  */
-public class UnexpectedStateException extends CacheAopException {
+public class UnexpectedStateException extends SchedAopException {
 
     /**
      * default serialVersionUID

@@ -1,4 +1,4 @@
-package com.baidu.acache.entry;
+package com.baidu.ascheduler.entry;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -7,12 +7,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.baidu.acache.driver.CacheDriver;
-import com.baidu.acache.driver.CacheDriverFactory;
-import com.baidu.acache.exception.CacheAopException;
-import com.baidu.acache.model.MethodInfo;
-import com.baidu.acache.processor.CacheDataProcessor;
-import com.baidu.acache.processor.CacheFrontProcessor;
+import com.baidu.ascheduler.cache.driver.CacheDriver;
+import com.baidu.ascheduler.cache.driver.CacheDriverFactory;
+import com.baidu.ascheduler.exception.SchedAopException;
+import com.baidu.ascheduler.model.ProcessContext;
+import com.baidu.ascheduler.processor.CacheProcessor;
+import com.baidu.ascheduler.processor.FrontProcessor;
 
 /**
  * 定义Cached修饰的切点（point cut）和它的连接点（join point）处理
@@ -21,14 +21,14 @@ import com.baidu.acache.processor.CacheFrontProcessor;
  *
  */
 @Aspect
-public class CacheAspect {
+public class SchedAspect {
 
-    private static final Logger logger = LoggerFactory.getLogger(CacheAspect.class);
+    private static final Logger logger = LoggerFactory.getLogger(SchedAspect.class);
 
     // 没有用spring托管
-    private CacheFrontProcessor preProcessor = new CacheFrontProcessor();
+    private FrontProcessor preProcessor = new FrontProcessor();
 
-    private CacheDataProcessor postProcessor = new CacheDataProcessor();
+    private CacheProcessor postProcessor = new CacheProcessor();
 
     @Autowired
     private CacheDriverFactory cacheDriverFactory;
@@ -43,11 +43,11 @@ public class CacheAspect {
      * @throws Throwable
      */
     @Around("@annotation(cached)")
-    public Object around(ProceedingJoinPoint jp, Cached cached) throws Throwable {
+    public Object around(ProceedingJoinPoint jp, Sched cached) throws Throwable {
         // 获取driver
-        CacheDriver cacheDriver = cacheDriverFactory.getCacheDriver(cached.driver());
+        CacheDriver cacheDriver = cacheDriverFactory.getCacheDriver(cached.cache());
         // 预处理，这里抛出的异常是受检异常，应该直接抛出，所以不在try块中
-        MethodInfo methodInfo = preProcessor.preProcess(jp, cached);
+        ProcessContext methodInfo = preProcessor.preProcess(jp, cached);
         // 处理数据
         try {
             logger.info("start to retrive data from: {} ", jp.getSignature().toLongString());
@@ -60,7 +60,7 @@ public class CacheAspect {
             }
             logger.info("data retrieved is: {}", ret);
             return ret;
-        } catch (CacheAopException exp) {
+        } catch (SchedAopException exp) {
             // be careful, this kind of exception may caused by your incorrect code
             logger.error("revive error occors in cache aop , caused by :", exp);
             if (methodInfo.getBatchSize() > 0) {
