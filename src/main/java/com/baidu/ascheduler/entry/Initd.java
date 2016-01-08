@@ -13,7 +13,9 @@ import com.baidu.ascheduler.model.SignatureInfo;
 import com.baidu.ascheduler.processor.AggrCacheProcessor;
 import com.baidu.ascheduler.processor.BatchProcessor;
 import com.baidu.ascheduler.processor.DecoratableProcessor;
+import com.baidu.ascheduler.processor.PlainCacheProcessor;
 import com.baidu.ascheduler.processor.PlainInvokProcessor;
+import com.baidu.ascheduler.processor.RetryProcessor;
 
 /**
  * the processor 解析函数签名，注解等等
@@ -117,15 +119,31 @@ public final class Initd {
     }
 
     /**
-     * 正常的处理流程
+     * 正常的处理流程 生成processor的规则，顺序在这里制定
      * 
      * @param ctx
      * @return
      * @throws Throwable
      */
     public Object start(ProcessContext ctx) throws Throwable {
-        DecoratableProcessor processor =
-                new AggrCacheProcessor().decorate(new BatchProcessor().decorate(new PlainInvokProcessor()));
+
+        DecoratableProcessor processor = new PlainInvokProcessor();
+        // TODO Scheduled processor
+        if (ctx.getRetry() > 0) {
+            processor = new RetryProcessor().decorate(processor);
+        }
+        if (ctx.aggrInvok()) {
+            if (ctx.getBatchSize() > 0) {
+                processor = new BatchProcessor().decorate(processor);
+            }
+            if (ctx.getCacheDriver() != null) {
+                processor = new AggrCacheProcessor().decorate(processor);
+            }
+        } else {
+            if (ctx.getCacheDriver() != null) {
+                processor = new PlainCacheProcessor().decorate(processor);
+            }
+        }
         return processor.process(ctx, ctx.getArgs());
     }
 

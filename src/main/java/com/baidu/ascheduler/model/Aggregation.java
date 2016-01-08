@@ -127,10 +127,16 @@ public class Aggregation implements Iterable {
      * if the input object is not appropriate, class cast exception will be thrown
      * 
      * @param input
+     * @throws IllegalParamException
      */
-    public void addAll(Object input) {
+    public void addAll(Object input) throws IllegalParamException {
         if (null == input) {
             throw new NullPointerException("the null object can't be inserted into Aggregation");
+        }
+        // input本身就是一个集合对象
+        if (!target.isAssignableFrom(input.getClass())) {
+            throw new IllegalParamException("input data: " + input.getClass() + " can't assign to class target: "
+                    + target);
         }
         // 根据目标类型来组织数据，entry会被转化为cell
         if (Map.class.isAssignableFrom(target)) {
@@ -152,18 +158,18 @@ public class Aggregation implements Iterable {
     /**
      * the entry will be converted to cell, the cell or other object will be inserted directly
      * 
-     * @param obj
+     * @param elementObj
      */
-    public void add(Object obj) {
-        if (null == obj) {
+    public void add(Object elementObj) {
+        if (null == elementObj) {
             throw new NullPointerException("the null object can't be inserted into Aggregation");
         }
         // 加入entry，将会被转化为cell
-        if (obj instanceof Map.Entry) {
+        if (elementObj instanceof Map.Entry) {
             assertMap();
-            datas.add(new Cell(((Map.Entry) obj).getKey(), ((Map.Entry) obj).getValue()));
+            datas.add(new Cell(((Map.Entry) elementObj).getKey(), ((Map.Entry) elementObj).getValue()));
         } else {
-            datas.add(obj);
+            datas.add(elementObj);
         }
     }
 

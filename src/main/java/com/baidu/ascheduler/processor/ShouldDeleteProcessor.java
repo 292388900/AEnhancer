@@ -67,11 +67,10 @@ public class ShouldDeleteProcessor {
      */
     @SuppressWarnings({ "rawtypes" })
     public Object processAggregated(ProcessContext ctx, CacheDriver driver) throws Throwable {
-        if (ctx.getOrgAggrParam() == null) {
-            throw new NullPointerException("the aggregation param (Collection or Map) should not be null ");
-        }
-        Aggregation orignalAggregatedParam =
-                new Aggregation(ctx.getAggParamType(), ctx.getOrgAggrParam());
+        // if (ctx.getOrgAggrParam() == null) {
+        // throw new NullPointerException("the aggregation param (Collection or Map) should not be null ");
+        // }
+        Aggregation orignalAggregatedParam = new Aggregation(ctx.getAggParamType(), null);
         Aggregation unCachedParam = new Aggregation(ctx.getAggParamType());
         Aggregation result = new Aggregation(ctx.getRetType());
         // CacheDriver driver = fac.getCacheDriver(ctx.getDriver());
@@ -108,7 +107,7 @@ public class ShouldDeleteProcessor {
                 result.add(data);
             }
         }
-        // TODO 
+        // TODO
         // 从接口query新的数据，并加入result集合
         if (!unCachedParam.isEmpty()) {
             // 将多次调用的值都放入unCachedResult中
@@ -127,7 +126,7 @@ public class ShouldDeleteProcessor {
             }
             // 集合大小不用强制一样，多个value对应一个key则会造成覆盖，但多个key对应一个value其实没有问题
             // assertSize(unCachedParam, unCachedResult);
-// TODO end to 
+            // TODO end to
             // 缓存所有数据
             if (!unCachedResult.isEmpty()) {
                 // 缓存这部分数据
@@ -151,11 +150,10 @@ public class ShouldDeleteProcessor {
      * @throws Throwable
      */
     public Object processAggregatedWithoutCache(ProcessContext ctx) throws Throwable {
-        if (ctx.getOrgAggrParam() == null) {
-            throw new NullPointerException("the argument for aggrgation as (Collection or Map) should not be null ");
-        }
-        Aggregation orignalAggregatedParam =
-                new Aggregation(ctx.getAggParamType(), ctx.getOrgAggrParam());
+        // if (ctx.getOrgAggrParam() == null) {
+        // throw new NullPointerException("the argument for aggrgation as (Collection or Map) should not be null ");
+        // }
+        Aggregation orignalAggregatedParam = new Aggregation(ctx.getAggParamType(), null /* ctx.getOrgAggrParam() */);
         Aggregation result = new Aggregation(ctx.getRetType());
         // 直接分批调用
         if (!orignalAggregatedParam.isEmpty()) {
@@ -191,8 +189,7 @@ public class ShouldDeleteProcessor {
                     logger.error("the element got from procedure contains nill, which won't be saved to cache");
                     continue;
                 }
-                unCachedKeys.add(getKey(ctx.replaceArgsWithKeys(ctx.getKeyFromResult(resultElement)),
-                        ctx));
+                unCachedKeys.add(getKey(ctx.replaceArgsWithKeys(ctx.getKeyFromResult(resultElement)), ctx));
                 unCachedDatas.add(resultElement);
             }
             assertSize(unCachedDatas, unCachedKeys);
@@ -206,8 +203,7 @@ public class ShouldDeleteProcessor {
                 Object uData = urIter.next();
                 Object uParam = upIter.next();
                 if (null != uData) { // XXX 这里与非顺序的是一样的，如果null就不缓存
-                    unCachedKeys.add(getKey(ctx.replaceArgsWithKeys(ctx.getKeyFromParam(uParam)),
-                            ctx));
+                    unCachedKeys.add(getKey(ctx.replaceArgsWithKeys(ctx.getKeyFromParam(uParam)), ctx));
                     unCachedDatas.add(uData);
                 }
             }
@@ -281,8 +277,7 @@ public class ShouldDeleteProcessor {
                 return ret;
             }
             // possible, as all the argument is in ignore list
-            logger.debug("the arguments is not null but the key is null key's name space: '{}'",
-                    ctx.getNameSpace());
+            logger.debug("the arguments is not null but the key is null key's name space: '{}'", ctx.getNameSpace());
         }
         logger.info("in name space: '{}' ,key for no argument(or all arg in ignore list) function is: '{}'",
                 ctx.getNameSpace(), FIXED);

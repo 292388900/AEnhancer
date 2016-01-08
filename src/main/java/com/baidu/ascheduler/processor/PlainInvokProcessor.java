@@ -1,7 +1,7 @@
 package com.baidu.ascheduler.processor;
 
-import java.rmi.UnexpectedException;
-
+import com.baidu.ascheduler.exception.SchedAopException;
+import com.baidu.ascheduler.exception.UnexpectedStateException;
 import com.baidu.ascheduler.model.ProcessContext;
 
 /**
@@ -22,12 +22,20 @@ public class PlainInvokProcessor implements DecoratableProcessor {
 
     @Override
     public Object process(ProcessContext ctx, Object p) throws Throwable {
-        if (decoratee != null) {
-            throw new UnexpectedException("final processor can't decorate other processor");
-        }
+        validateCtx(ctx, p);
         // current start
         Object[] args = (Object[]) p;
         return ctx.invokeOrignialMethod(args);
         // current end
+    }
+
+    @Override
+    public void validateCtx(ProcessContext ctx, Object param) throws SchedAopException {
+        if (decoratee != null) {
+            throw new UnexpectedStateException("final processor can't decorate other processor");
+        }
+        if (!(param instanceof Object[])) {
+            throw new UnexpectedStateException("error param for Plain Invoke Processor");
+        }
     }
 }

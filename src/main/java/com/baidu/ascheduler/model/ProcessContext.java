@@ -19,8 +19,7 @@ public class ProcessContext {
     // private static final Logger logger = LoggerFactory.getLogger(ProcessContext.class);
     private SignatureInfo signature;
     private AnnotationInfo annotation;
-    private Object[] clonedArgsRef; // 克隆的原参数
-    private Object orgAggrArgs; // 原集合对象
+    private final Object[] clonedArgs; // 克隆的原参数
     private ProceedingJoinPoint jp; // join point
     private CacheDriver cacheDriver;
 
@@ -30,11 +29,12 @@ public class ProcessContext {
         this.signature = signature;
         this.annotation = annotation;
         this.jp = jp;
-        clonedArgsRef = jp.getArgs().clone();
-        if (annotation.aggrInvok()) {
-            orgAggrArgs = clonedArgsRef[signature.getPosition()];
-        }
+        clonedArgs = jp.getArgs().clone();
         ctxId = new Random().nextLong();
+    }
+
+    public Object getAggrParam(Object[] p) {
+        return null;
     }
 
     public CacheDriver getCacheDriver() {
@@ -46,34 +46,22 @@ public class ProcessContext {
     }
 
     /**
-     * 获取原参数中聚合位置的参数对象
-     * 
-     * @return 如果不存在Aggr调用，则返回null
-     */
-    public Object getOrgAggrParam() {
-        return orgAggrArgs;
-    }
-
-    /**
      * 获取克隆的原始参数的引用，所以，直接修改这个数组的的内容不会对原对象产生影响<br>
      * 但是是不能修改数组中引用的对象
      * 
      * @return cloned的参数数组
      */
     public Object[] getArgs() {
-        return clonedArgsRef;
+        return clonedArgs;
     }
 
     /**
-     * 从原始接口调用，会根据annotation中的重试次数重试
      * 
      * @param args 参数
      * @return 返回按照给入参数调用原方法的结果
      * @throws Throwable 异常
      */
     public Object invokeOrignialMethod(Object[] args) throws Throwable {
-        //
-        // 最后一次重试如果有异常则抛出
         return jp.proceed(args);
     }
 
@@ -133,8 +121,8 @@ public class ProcessContext {
      * @return
      */
     public Object[] replaceArgsWithKeys(Object keys) {
-        clonedArgsRef[signature.getPosition()] = keys;
-        return clonedArgsRef;
+        clonedArgs[signature.getPosition()] = keys;
+        return clonedArgs;
     }
 
     /**
@@ -196,6 +184,15 @@ public class ProcessContext {
 
     public long getCtxId() {
         return ctxId;
+    }
+
+    /**
+     * ( 获取集合类参数在原参数中的位置
+     * 
+     * @return
+     */
+    public int getAggrPosition() {
+        return signature.getPosition();
     }
 
 }

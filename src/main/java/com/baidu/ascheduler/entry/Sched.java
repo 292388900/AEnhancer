@@ -96,4 +96,10 @@ public @interface Sched {
      */
     int retry() default 1;
 
+    /**
+     * 超时时间，毫秒，小于等于0代表不设置超时时间
+     * 
+     * @return
+     */
+    int timeout() default 0;
 }

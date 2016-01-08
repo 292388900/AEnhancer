@@ -10,20 +10,22 @@ import org.slf4j.LoggerFactory;
 
 import com.baidu.ascheduler.cache.driver.CacheDriver;
 import com.baidu.ascheduler.exception.IllegalParamException;
+import com.baidu.ascheduler.exception.ShortCircuitExcption;
 import com.baidu.ascheduler.exception.UnexpectedStateException;
 import com.baidu.ascheduler.model.Aggregation;
 import com.baidu.ascheduler.model.ProcessContext;
 
 public class AggrCacheProcessor extends AbsCacheProcessor {
 
-    private Logger logger = LoggerFactory.getLogger(AggrCacheProcessor.class);
+    private final static Logger logger = LoggerFactory.getLogger(AggrCacheProcessor.class);
 
     /**
      * Object p 为参数中的集合对象
      */
     @Override
     public Object process(ProcessContext ctx, Object p) throws Throwable {
-        Aggregation param = getParam(p);
+        validateCtx(ctx, p);
+        Aggregation param = new Aggregation(ctx.getAggParamType(), (Object[].class.cast(p))[ctx.getAggrPosition()]);
         Aggregation result = new Aggregation(ctx.getRetType());
         CacheDriver driver = ctx.getCacheDriver();
         // 结束
@@ -33,7 +35,7 @@ public class AggrCacheProcessor extends AbsCacheProcessor {
         List<String> keys = new ArrayList<String>();
         for (Object obj : param) {
             if (null == obj) {
-                logger.error("the object in parameter is null, which will be skipped");
+                logger.error("ctx_id: {} the object in parameter is null, which will be skipped", ctx.getCtxId());
                 continue;
             }
             keys.add(getKey(ctx.replaceArgsWithKeys(ctx.getKeyFromParam(obj)), ctx));
@@ -62,16 +64,13 @@ public class AggrCacheProcessor extends AbsCacheProcessor {
         Object nextParam = ctx.replaceArgsWithKeys(unCachedParam.toInstance());
         Object rawResult = decoratee.process(ctx, nextParam);
         if (null != rawResult) {
-            if (!(rawResult instanceof Aggregation)) {
-                throw new IllegalParamException("non aggregation param for cache processor");
-            }
-            Aggregation unCachedResult = Aggregation.class.cast(param);
+            Aggregation unCachedResult = new Aggregation(ctx.getRetType(), rawResult);
             // 缓存这部分数据
             cacheUnCached(unCachedResult, unCachedParam, ctx, driver);
             result.add(unCachedResult);
         }
 
-        return result;
+        return result.toInstance();
     }
 
     /**
@@ -96,7 +95,9 @@ public class AggrCacheProcessor extends AbsCacheProcessor {
             for (Object resultElement : unCachedResult) {
                 // XXX 注意：这里跳过了null的结果，如果原来接口返回null，则不将它缓存下来
                 if (null == resultElement) {
-                    logger.error("the element got from procedure contains nill, which won't be saved to cache");
+                    logger.error(
+                            "ctx_id: {} the element got from procedure contains nill, which won't be saved to cache",
+                            ctx.getCtxId());
                     continue;
                 }
                 unCachedKeys.add(getKey(ctx.replaceArgsWithKeys(ctx.getKeyFromResult(resultElement)), ctx));
@@ -120,21 +121,11 @@ public class AggrCacheProcessor extends AbsCacheProcessor {
 
         }
         // 缓存这部分数据
-        logger.info("unCached data (order is disrupted size {}) will be saved (expiration: {}) ", unCachedKeys.size(),
-                ctx.getExpiration());
+        logger.info("ctx_id: {} unCached data (order is disrupted size {}) will be saved (expiration: {}) ",
+                ctx.getCtxId(), unCachedKeys.size(), ctx.getExpiration());
         driver.setAll(unCachedKeys, unCachedDatas, ctx.getExpiration(), ctx.getNameSpace());
         // 加入result的集合
         // result.add(unCachedResult)
-    }
-
-    private Aggregation getParam(Object p) throws IllegalParamException {
-        if (p == null) {
-            throw new IllegalParamException("null param for cache processor");
-        }
-        if (!(p instanceof Aggregation)) {
-            throw new IllegalParamException("non aggregation param for cache processor");
-        }
-        return Aggregation.class.cast(p);
     }
 
     private DecoratableProcessor decoratee;
@@ -145,4 +136,24 @@ public class AggrCacheProcessor extends AbsCacheProcessor {
         return this;
     }
 
+    @Override
+    public void validateCtx(ProcessContext ctx, Object param) throws UnexpectedStateException, ShortCircuitExcption {
+        if (decoratee == null) {
+            throw new UnexpectedStateException("decoratee can't be null for Aggr Cache Processor");
+        }
+        if (!ctx.aggrInvok()) {
+            throw new UnexpectedStateException("not aggrInvk for Aggr Cache Processor");
+        }
+        if (!(param instanceof Object[])) {
+            throw new UnexpectedStateException("param must be Object[] for Aggr Cache Processor");
+        }
+        Object[] p = Object[].class.cast(param);
+        if (p.length < ctx.getAggrPosition()) {
+            // should not reach here
+            throw new UnexpectedStateException("error param length");
+        }
+        if (null == p[ctx.getAggrPosition()]) {
+            throw new ShortCircuitExcption("null aggr param");
+        }
+    }
 }

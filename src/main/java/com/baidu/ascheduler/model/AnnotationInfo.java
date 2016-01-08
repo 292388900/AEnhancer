@@ -44,13 +44,13 @@ public class AnnotationInfo {
     /**
      * 创建cachedInfo
      * 
-     * @param cached
+     * @param scheduled
      * @throws IllegalParamException
      */
-    public AnnotationInfo(Sched cached) throws IllegalParamException {
+    public AnnotationInfo(Sched scheduled) throws IllegalParamException {
         SpelExpressionParser parser = new SpelExpressionParser();
-        String etParam = cached.param();
-        String etResult = cached.result();
+        String etParam = scheduled.param();
+        String etResult = scheduled.result();
         // annotation spring expression language
         if (null != etParam && !"".equals(etParam)) {
             extractFromParam = parser.parseExpression(etParam);
@@ -62,13 +62,13 @@ public class AnnotationInfo {
         } else {
             extractFromResult = null;
         }
-        this.expiration = cached.expiration();
-        this.batchSize = cached.batchLimit();
-        this.driverBeanName = cached.cache();
-        this.ignList = cached.ignList();
-        this.nameSpace = cached.nameSpace();
-        this.retryTimes = cached.retry();
-        isResultSequential = cached.sequential();
+        this.expiration = scheduled.expiration();
+        this.batchSize = scheduled.batchLimit();
+        this.driverBeanName = scheduled.cache();
+        this.ignList = scheduled.ignList();
+        this.nameSpace = scheduled.nameSpace();
+        this.retryTimes = scheduled.retry();
+        isResultSequential = scheduled.sequential();
         assertLegal();
     }
 

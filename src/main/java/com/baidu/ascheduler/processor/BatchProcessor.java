@@ -3,7 +3,9 @@ package com.baidu.ascheduler.processor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.baidu.ascheduler.exception.IllegalParamException;
+import com.baidu.ascheduler.exception.SchedAopException;
+import com.baidu.ascheduler.exception.ShortCircuitExcption;
+import com.baidu.ascheduler.exception.UnexpectedStateException;
 import com.baidu.ascheduler.model.Aggregation;
 import com.baidu.ascheduler.model.ProcessContext;
 
@@ -22,11 +24,13 @@ public class BatchProcessor implements DecoratableProcessor {
     /**
      * 分多次调用下一个processor
      * 
+     * @param Object p
      * @throws Throwable
      */
     @Override
     public Object process(ProcessContext ctx, Object p) throws Throwable {
-        Aggregation param = getParam(p);
+        validateCtx(ctx, p);
+        Aggregation param = new Aggregation(ctx.getAggParamType(), (Object[].class.cast(p))[ctx.getAggrPosition()]);
         if (param.isEmpty()) {
 
         }
@@ -36,30 +40,43 @@ public class BatchProcessor implements DecoratableProcessor {
         for (Aggregation splited : param.split(ctx.getBatchSize())) {
             // get the data from target process
             logger.info("unCached keys exist, call the target process to get data, keys args are : {}", splited);
-            // splited 设置为结果，作为下一个processor的参数
+            // 替换后的参数 设置为结果，作为下一个processor的参数
             Object nxtParam = ctx.replaceArgsWithKeys(splited.toInstance());
             Object rawResult = decoratee.process(ctx, nxtParam);
             // 从下一个processor获取结果
-            Aggregation deltaResult = (Aggregation) rawResult;
-            if (null != deltaResult) {
-                logger.info("data is get from target process : {}", deltaResult);
+            if (null != rawResult) {
+                Aggregation deltaResult = new Aggregation(ctx.getRetType(), rawResult);
+                logger.info("ctx_id: {} data is get from target process : {}", ctx.getCtxId(), deltaResult);
                 result.addAll(deltaResult);
             } else {
-                logger.warn("the data is not avaliable from the procedure");
+                logger.warn("ctx_id: {} the data is not avaliable from the procedure", ctx.getCtxId());
             }
         }
         return result;
 
     }
 
-    private Aggregation getParam(Object p) throws IllegalParamException {
-        if (p == null) {
-            throw new IllegalParamException("null param for batch invok processor");
+    @Override
+    public void validateCtx(ProcessContext ctx, Object param) throws SchedAopException {
+        if (decoratee == null) {
+            throw new UnexpectedStateException("decoratee can't be null for Batch Processor");
         }
-        if (!(p instanceof Aggregation)) {
-            throw new IllegalParamException("non aggregation param for batch invok processor");
+        // batch 首先肯定是aggr
+        if (!ctx.aggrInvok()) {
+            throw new UnexpectedStateException("not aggrInvk for Batch  Processor");
         }
-        return Aggregation.class.cast(p);
+        if (!(param instanceof Object[])) {
+            throw new UnexpectedStateException("param must be Object[] for Batch  Processor");
+        }
+        Object[] p = Object[].class.cast(param);
+        if (p.length < ctx.getAggrPosition()) {
+            // should not reach here
+            throw new UnexpectedStateException("error param length");
+        }
+
+        if (null == p[ctx.getAggrPosition()]) {
+            throw new ShortCircuitExcption("null aggr param");
+        }
     }
 
 }

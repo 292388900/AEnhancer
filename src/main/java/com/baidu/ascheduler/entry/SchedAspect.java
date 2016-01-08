@@ -1,5 +1,6 @@
 package com.baidu.ascheduler.entry;
 
+import org.apache.commons.lang.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -33,34 +34,29 @@ public class SchedAspect {
      * 还有post processor抛出的所有CacheAopException的子类都会被捕获。但是pre processor抛出的异常都是明显编码错误，直接抛出
      * 
      * @param jp
-     * @param cached
+     * @param scheduled
      * @return 方法调用的返回值
      * @throws Throwable
      */
-    @Around("@annotation(cached)")
-    public Object around(ProceedingJoinPoint jp, Sched cached) throws Throwable {
+    @Around("@annotation(scheduled)")
+    public Object around(ProceedingJoinPoint jp, Sched scheduled) throws Throwable {
         // 预处理，这里抛出的异常是受检异常，应该直接抛出，所以不在try块中
-        ProcessContext ctx = initd.parse(jp, cached);
+        ProcessContext ctx = initd.parse(jp, scheduled);
         // 获取driver
-        ctx.setCacheDriver(cacheDriverFactory.getCacheDriver(cached.cache()));
+        if (!StringUtils.isEmpty(scheduled.cache())) {
+            ctx.setCacheDriver(cacheDriverFactory.getCacheDriver(scheduled.cache()));
+        }
         // TODO 将 处理数据 转变为
         try {
-            logger.info("start to retrive data from: {} ", jp.getSignature().toLongString());
+            logger.info("ctx_id: {} , start to retrive data from: {} ", ctx.getCtxId(), jp.getSignature()
+                    .toLongString());
             // TODO 将driver等的流程放入这里
-            return initd.start(ctx);
-
-            // Object ret = null;
-            // // 根据不同的请求类型
-            // if (!ctx.aggrInvok()) {
-            // ret = postProcessor.processNormal(ctx, cacheDriver);
-            // } else {
-            // ret = postProcessor.processAggregated(ctx, cacheDriver);
-            // }
-            // logger.info("data retrieved is: {}", ret);
-            // return ret;
+            Object ret = initd.start(ctx);
+            logger.info("data got successfully ctx_id: " + ctx.getCtxId() + ", data: " + ret);
+            return ret;
         } catch (SchedAopException exp) {
             // be careful, this kind of exception may caused by your incorrect code
-            logger.error("revive error occors in cache aop , caused by :", exp);
+            logger.error("ctx_id: {} ,revive error occors in cache aop , caused by :", ctx.getCtxId(), exp);
             if (ctx.getBatchSize() > 0) {
                 return initd.startPlainWithBatch(ctx);
             }
@@ -68,7 +64,8 @@ public class SchedAspect {
             return jp.proceed(jp.getArgs());
         } catch (RuntimeException rtExp) {
             // swallow the runtime exception
-            logger.error("revive runtime exception occurs in cache aop , caused by :", rtExp);
+            logger.error("ctx_id: {} , revive runtime exception occurs in cache aop , caused by :", ctx.getCtxId(),
+                    rtExp);
             // be careful about this kind of exception, the cache server may just crash
             if (ctx.getBatchSize() > 0) {
                 return initd.startPlainWithBatch(ctx);

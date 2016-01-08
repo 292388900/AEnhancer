@@ -10,12 +10,18 @@ import com.baidu.ascheduler.exception.UnexpectedStateException;
 import com.baidu.ascheduler.model.Aggregation;
 import com.baidu.ascheduler.model.ProcessContext;
 
+/**
+ * 在所有cache相关的模块中，不应该缓存null。null代表着未找到数据
+ * 
+ * @author xushuda
+ *
+ */
 public abstract class AbsCacheProcessor implements DecoratableProcessor {
     private static final String FIXED = "FIXED";
 
     private static final String KEY_SEPERATOR = ",";
-    
-    private Logger logger = LoggerFactory.getLogger(AbsCacheProcessor.class);
+
+    private final static Logger logger = LoggerFactory.getLogger(AbsCacheProcessor.class);
 
     /**
      * 获取参数对应的key
@@ -45,17 +51,19 @@ public abstract class AbsCacheProcessor implements DecoratableProcessor {
             String ret = key.toString();
             // empty string will return FIXED
             if (!ret.equals("")) {
-                logger.info("in name space '{}' ,key for org data {} is: '{}'", ctx.getNameSpace(), args, ret);
+                logger.info("ctx_id: {} in name space '{}' ,key for org data {} is: '{}'", ctx.getCtxId(),
+                        ctx.getNameSpace(), args, ret);
                 return ret;
             }
             // possible, as all the argument is in ignore list
-            logger.debug("the arguments is not null but the key is null key's name space: '{}'", ctx.getNameSpace());
+            logger.debug("ctx_id: {} the arguments is not null but the key is null key's name space: '{}'",
+                    ctx.getCtxId(), ctx.getNameSpace());
         }
-        logger.info("in name space: '{}' ,key for no argument(or all arg in ignore list) function is: '{}'",
-                ctx.getNameSpace(), FIXED);
+        logger.info("ctx_id: {} in name space: '{}' ,key for no argument(or all arg in ignore list) function is: '{}'",
+                ctx.getCtxId(), ctx.getNameSpace(), FIXED);
         return FIXED;
     }
-    
+
     /**
      * same as AssertSize(List ,List)
      * 
@@ -69,7 +77,7 @@ public abstract class AbsCacheProcessor implements DecoratableProcessor {
                     + " not eauals to key size " + (null == key ? 0 : key.size()));
         }
     }
-    
+
     /**
      * the size of return value must match the size of key
      * 
