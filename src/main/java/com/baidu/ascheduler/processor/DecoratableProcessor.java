@@ -15,8 +15,21 @@ public interface DecoratableProcessor {
      */
     public abstract Object process(ProcessContext ctx, Object param) throws Throwable;
 
+    /**
+     * 装饰另一个processor
+     * 
+     * @param decoratee
+     * @return
+     */
     public DecoratableProcessor decorate(DecoratableProcessor decoratee);
 
+    /**
+     * 验证上线文的正确性
+     * 
+     * @param ctx
+     * @param param
+     * @throws SchedAopException
+     */
     public abstract void validateCtx(ProcessContext ctx, Object param) throws SchedAopException;
 
 }

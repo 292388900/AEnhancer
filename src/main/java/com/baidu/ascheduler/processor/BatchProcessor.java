@@ -39,7 +39,8 @@ public class BatchProcessor implements DecoratableProcessor {
         // the argument，如果必要（batch）会分为多批
         for (Aggregation splited : param.split(ctx.getBatchSize())) {
             // get the data from target process
-            logger.info("unCached keys exist, call the target process to get data, keys args are : {}", splited);
+            logger.info("ctx_id: {} unCached keys exist, call the target process to get data, keys args are : {}",
+                    ctx.getCtxId(), splited);
             // 替换后的参数 设置为结果，作为下一个processor的参数
             Object nxtParam = ctx.replaceArgsWithKeys(splited.toInstance());
             Object rawResult = decoratee.process(ctx, nxtParam);

@@ -1,18 +1,18 @@
-# CacheAop
-Light Weight Cache Infrastructure for Application
-
+# Scheduler AOP
+Light Weight Scheduler Infrastructure for Application
+```
 使用场景：
 在对远程接口调用的时候，或者一些等待I/O等的操作。提供轻量级的调度。
-1、提供异常重试
-2、提供对批量接口的限制批量大小的调用
-3、提供超时控制
-4、提供对结果的缓存
-
-缓存： 类似EHCACHE，但是提供更flexible和强大的配置：
+	1、提供异常重试
+	2、提供对批量接口的限制批量大小的调用
+	3、提供超时控制
+	4、提供对结果的缓存
+	PS:
+	缓存： 类似EHCACHE，但是提供更flexible和强大的配置：
     	1、支持不同存储介质
     	2、对于集合对象，缓存支持部分命中
-	3、可提供手动刷新缓存等方法的支持
-
+		3、可提供手动刷新缓存等方法的支持
+```
 	a)最简单使用：
 ```
   @Cached
