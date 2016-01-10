@@ -1,4 +1,4 @@
-package com.baidu.ascheduler.model;
+package com.baidu.ascheduler.context;
 
 import java.util.Random;
 
@@ -8,12 +8,14 @@ import com.baidu.ascheduler.cache.driver.CacheDriver;
 import com.baidu.ascheduler.exception.IllegalParamException;
 
 /**
- * hold thread local variable to provide info of signature and annotation
+ * 处理上下文的AOP版本（从annotation中获取的信息）
+ * 
+ * hold variable to provide info of signature and annotation
  * 
  * @author xushuda
  *
  */
-public class ProcessContext {
+public class AopContext implements ProcessContext {
 
     private final long ctxId;
     // private static final Logger logger = LoggerFactory.getLogger(ProcessContext.class);
@@ -25,7 +27,7 @@ public class ProcessContext {
 
     // private Aggregation batchInvokAggr; // 不包含集合类外的参数
 
-    public ProcessContext(SignatureInfo signature, AnnotationInfo annotation, ProceedingJoinPoint jp) {
+    public AopContext(SignatureInfo signature, AnnotationInfo annotation, ProceedingJoinPoint jp) {
         this.signature = signature;
         this.annotation = annotation;
         this.jp = jp;
@@ -33,10 +35,7 @@ public class ProcessContext {
         ctxId = new Random().nextLong();
     }
 
-    public Object getAggrParam(Object[] p) {
-        return null;
-    }
-
+    @Override
     public CacheDriver getCacheDriver() {
         return cacheDriver;
     }
@@ -51,6 +50,7 @@ public class ProcessContext {
      * 
      * @return cloned的参数数组
      */
+    @Override
     public Object[] getArgs() {
         return clonedArgs;
     }
@@ -61,6 +61,7 @@ public class ProcessContext {
      * @return 返回按照给入参数调用原方法的结果
      * @throws Throwable 异常
      */
+    @Override
     public Object invokeOrignialMethod(Object[] args) throws Throwable {
         return jp.proceed(args);
     }
@@ -70,6 +71,7 @@ public class ProcessContext {
      * 
      * @return
      */
+    @Override
     public int getBatchSize() {
         return annotation.getBatchSize();
     }
@@ -79,17 +81,9 @@ public class ProcessContext {
      * 
      * @return
      */
+    @Override
     public int[] getIgnoreList() {
         return annotation.getIgnList();
-    }
-
-    /**
-     * 获取driver的beanName
-     * 
-     * @return
-     */
-    public String getDriver() {
-        return annotation.getDriverName();
     }
 
     /**
@@ -99,6 +93,7 @@ public class ProcessContext {
      * @return
      * @throws IllegalParamException
      */
+    @Override
     public Object getKeyFromParam(Object paramElement) throws IllegalParamException {
         return annotation.extParam(paramElement);
     }
@@ -110,6 +105,7 @@ public class ProcessContext {
      * @return
      * @throws IllegalParamException
      */
+    @Override
     public Object getKeyFromResult(Object resultElement) throws IllegalParamException {
         return annotation.extResult(resultElement);
     }
@@ -120,6 +116,7 @@ public class ProcessContext {
      * @param keys
      * @return
      */
+    @Override
     public Object[] replaceArgsWithKeys(Object keys) {
         clonedArgs[signature.getPosition()] = keys;
         return clonedArgs;
@@ -130,6 +127,7 @@ public class ProcessContext {
      * 
      * @return
      */
+    @Override
     public int getExpiration() {
         return annotation.getExpiration();
     }
@@ -139,6 +137,7 @@ public class ProcessContext {
      * 
      * @return
      */
+    @Override
     public Class<?> getAggParamType() {
         return signature.getAggParamType();
     }
@@ -148,6 +147,7 @@ public class ProcessContext {
      * 
      * @return
      */
+    @Override
     public Class<?> getRetType() {
         return signature.getRetType();
     }
@@ -157,6 +157,7 @@ public class ProcessContext {
      * 
      * @return
      */
+    @Override
     public String getNameSpace() {
         return annotation.getNameSpace().equals("") ? signature.getSignature() : annotation.getNameSpace();
     }
@@ -166,10 +167,12 @@ public class ProcessContext {
      * 
      * @return
      */
+    @Override
     public boolean aggrInvok() {
         return annotation.aggrInvok();
     }
 
+    @Override
     public int getRetry() {
         return annotation.getRetryTimes();
     }
@@ -178,10 +181,12 @@ public class ProcessContext {
      * 
      * @return
      */
+    @Override
     public boolean relyOnSeqResult() {
         return annotation.isResultSequential();
     }
 
+    @Override
     public long getCtxId() {
         return ctxId;
     }
@@ -191,8 +196,14 @@ public class ProcessContext {
      * 
      * @return
      */
+    @Override
     public int getAggrPosition() {
         return signature.getPosition();
+    }
+
+    @Override
+    public int getTimeout() {
+        return annotation.getTimeout();
     }
 
 }

@@ -6,9 +6,9 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.baidu.ascheduler.context.Aggregation;
+import com.baidu.ascheduler.context.ProcessContext;
 import com.baidu.ascheduler.exception.UnexpectedStateException;
-import com.baidu.ascheduler.model.Aggregation;
-import com.baidu.ascheduler.model.ProcessContext;
 
 /**
  * 在所有cache相关的模块中，不应该缓存null。null代表着未找到数据

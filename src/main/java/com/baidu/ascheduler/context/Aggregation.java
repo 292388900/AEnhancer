@@ -1,4 +1,4 @@
-package com.baidu.ascheduler.model;
+package com.baidu.ascheduler.context;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;

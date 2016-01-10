@@ -17,5 +17,9 @@ public class UnexpectedStateException extends SchedAopException {
     public UnexpectedStateException(String message) {
         super(message);
     }
+    
+    public UnexpectedStateException(Exception e){
+        super(e);
+    }
 
 }

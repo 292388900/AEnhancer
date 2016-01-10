@@ -1,8 +1,15 @@
 package com.baidu.ascheduler.processor;
 
+import com.baidu.ascheduler.context.ProcessContext;
 import com.baidu.ascheduler.exception.SchedAopException;
-import com.baidu.ascheduler.model.ProcessContext;
 
+/**
+ * 
+ * @author xushuda
+ *
+ * @param <RET> 返回的范型
+ * @param <PARAM> 参数的范型
+ */
 public interface DecoratableProcessor {
 
     /**

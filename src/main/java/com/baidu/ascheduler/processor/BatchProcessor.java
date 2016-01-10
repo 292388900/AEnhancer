@@ -3,11 +3,12 @@ package com.baidu.ascheduler.processor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.baidu.ascheduler.context.Aggregation;
+import com.baidu.ascheduler.context.ProcessContext;
+import com.baidu.ascheduler.context.ShortCircuitType;
 import com.baidu.ascheduler.exception.SchedAopException;
 import com.baidu.ascheduler.exception.ShortCircuitExcption;
 import com.baidu.ascheduler.exception.UnexpectedStateException;
-import com.baidu.ascheduler.model.Aggregation;
-import com.baidu.ascheduler.model.ProcessContext;
 
 public class BatchProcessor implements DecoratableProcessor {
 
@@ -32,7 +33,7 @@ public class BatchProcessor implements DecoratableProcessor {
         validateCtx(ctx, p);
         Aggregation param = new Aggregation(ctx.getAggParamType(), (Object[].class.cast(p))[ctx.getAggrPosition()]);
         if (param.isEmpty()) {
-
+            // TODO this will still do?
         }
         // 将多次调用的值都放入unCachedResult中
         Aggregation result = new Aggregation(ctx.getRetType());
@@ -53,7 +54,7 @@ public class BatchProcessor implements DecoratableProcessor {
                 logger.warn("ctx_id: {} the data is not avaliable from the procedure", ctx.getCtxId());
             }
         }
-        return result;
+        return result.toInstance();
 
     }
 
@@ -76,7 +77,7 @@ public class BatchProcessor implements DecoratableProcessor {
         }
 
         if (null == p[ctx.getAggrPosition()]) {
-            throw new ShortCircuitExcption("null aggr param");
+            throw new ShortCircuitExcption("null aggr param", ShortCircuitType.NULL_PARAM);
         }
     }
 

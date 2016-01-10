@@ -26,6 +26,8 @@ public class TestEntry {
         entry.getInt2(4);
         entry.getStr();
         entry.getStrs(new String[] { "a", "b" });
+        entry.timeoutTest();
+        entry.notTimeoutTest();
     }
 
 }

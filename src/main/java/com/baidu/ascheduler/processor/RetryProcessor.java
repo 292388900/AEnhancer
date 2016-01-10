@@ -3,9 +3,9 @@ package com.baidu.ascheduler.processor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.baidu.ascheduler.context.ProcessContext;
 import com.baidu.ascheduler.exception.SchedAopException;
 import com.baidu.ascheduler.exception.UnexpectedStateException;
-import com.baidu.ascheduler.model.ProcessContext;
 
 public class RetryProcessor implements DecoratableProcessor {
     private Logger logger = LoggerFactory.getLogger(RetryProcessor.class);
@@ -20,7 +20,7 @@ public class RetryProcessor implements DecoratableProcessor {
             try {
                 return decoratee.process(ctx, p);
             } catch (Throwable th) {
-                logger.info("ctx_id: {} error , exception: {}, left ret times: {}",ctx.getCtxId(), th, retryTimes - 1);
+                logger.info("ctx_id: {} error , exception: {}, left ret times: {}", ctx.getCtxId(), th, retryTimes - 1);
             }
         }
         return decoratee.process(ctx, p);

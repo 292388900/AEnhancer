@@ -4,9 +4,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.baidu.ascheduler.cache.driver.CacheDriver;
+import com.baidu.ascheduler.context.ProcessContext;
 import com.baidu.ascheduler.exception.SchedAopException;
 import com.baidu.ascheduler.exception.UnexpectedStateException;
-import com.baidu.ascheduler.model.ProcessContext;
 
 public class PlainCacheProcessor extends AbsCacheProcessor {
 

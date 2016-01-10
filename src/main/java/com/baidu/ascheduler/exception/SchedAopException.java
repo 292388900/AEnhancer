@@ -16,4 +16,8 @@ public abstract class SchedAopException extends Exception {
     public SchedAopException(String message) {
         super(message);
     }
+
+    public SchedAopException(Exception e) {
+        super(e);
+    }
 }

@@ -1,8 +1,11 @@
 package com.baidu.ascheduler.processor;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.baidu.ascheduler.context.ProcessContext;
 import com.baidu.ascheduler.exception.SchedAopException;
 import com.baidu.ascheduler.exception.UnexpectedStateException;
-import com.baidu.ascheduler.model.ProcessContext;
 
 /**
  * 普通的调用原函数
@@ -11,6 +14,7 @@ import com.baidu.ascheduler.model.ProcessContext;
  *
  */
 public class PlainInvokProcessor implements DecoratableProcessor {
+    private Logger logger = LoggerFactory.getLogger(PlainInvokProcessor.class);
 
     private DecoratableProcessor decoratee;
 
@@ -24,6 +28,7 @@ public class PlainInvokProcessor implements DecoratableProcessor {
     public Object process(ProcessContext ctx, Object p) throws Throwable {
         validateCtx(ctx, p);
         // current start
+        logger.info("invok the actual method");
         Object[] args = (Object[]) p;
         return ctx.invokeOrignialMethod(args);
         // current end

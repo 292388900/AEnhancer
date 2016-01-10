@@ -54,8 +54,28 @@ public class BeanMock {
         return "OK";
     }
 
-    @Sched(cache = "NopDriver", sequential = true)
+    @Sched(cache = "NopDriver", sequential = true, timeout = 100)
     public List<String> getStrs(String[] args) {
         return Arrays.asList(args);
+    }
+
+    @Sched(cache = "", timeout = 100)
+    public String timeoutTest() {
+        try {
+            Thread.sleep(1500);
+        } catch (InterruptedException e) {
+            // e.printStackTrace();
+        }
+        return "test timeout";
+    }
+
+    @Sched(cache = "", timeout = 12000)
+    public String notTimeoutTest() {
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            // e.printStackTrace();
+        }
+        return "test not timeout";
     }
 }

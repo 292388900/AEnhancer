@@ -10,10 +10,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.baidu.ascheduler.cache.driver.CacheDriver;
+import com.baidu.ascheduler.context.Aggregation;
+import com.baidu.ascheduler.context.ProcessContext;
 import com.baidu.ascheduler.exception.IllegalParamException;
 import com.baidu.ascheduler.exception.UnexpectedStateException;
-import com.baidu.ascheduler.model.Aggregation;
-import com.baidu.ascheduler.model.ProcessContext;
 
 /**
  * 与cacheDrive的接口交互，处理Cache 所有获取为null的元素，视为可能远程的失败，不做存储<br>

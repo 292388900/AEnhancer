@@ -9,11 +9,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.baidu.ascheduler.cache.driver.CacheDriver;
+import com.baidu.ascheduler.context.Aggregation;
+import com.baidu.ascheduler.context.ProcessContext;
+import com.baidu.ascheduler.context.ShortCircuitType;
 import com.baidu.ascheduler.exception.IllegalParamException;
 import com.baidu.ascheduler.exception.ShortCircuitExcption;
 import com.baidu.ascheduler.exception.UnexpectedStateException;
-import com.baidu.ascheduler.model.Aggregation;
-import com.baidu.ascheduler.model.ProcessContext;
 
 public class AggrCacheProcessor extends AbsCacheProcessor {
 
@@ -153,7 +154,7 @@ public class AggrCacheProcessor extends AbsCacheProcessor {
             throw new UnexpectedStateException("error param length");
         }
         if (null == p[ctx.getAggrPosition()]) {
-            throw new ShortCircuitExcption("null aggr param");
+            throw new ShortCircuitExcption("null aggr param", ShortCircuitType.NULL_PARAM);
         }
     }
 }

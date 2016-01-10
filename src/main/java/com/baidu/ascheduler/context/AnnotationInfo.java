@@ -1,4 +1,4 @@
-package com.baidu.ascheduler.model;
+package com.baidu.ascheduler.context;
 
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -24,6 +24,14 @@ public class AnnotationInfo {
     private final String nameSpace;
     private final int retryTimes;
     private final boolean isResultSequential;
+    private final int timeout;
+
+    /**
+     * @return the timeout
+     */
+    public int getTimeout() {
+        return timeout;
+    }
 
     public int getRetryTimes() {
         return retryTimes;
@@ -69,6 +77,7 @@ public class AnnotationInfo {
         this.nameSpace = scheduled.nameSpace();
         this.retryTimes = scheduled.retry();
         isResultSequential = scheduled.sequential();
+        timeout = scheduled.timeout();
         assertLegal();
     }
 
