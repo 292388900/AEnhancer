@@ -1,4 +1,4 @@
-package com.baidu.ascheduler.context;
+package com.baidu.ascheduler.ext.impl.aggr;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;
@@ -19,6 +19,7 @@ import java.util.TreeMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.baidu.ascheduler.exception.IllegalParamException;
+import com.baidu.ascheduler.exception.UnexpectedStateException;
 
 /**
  * aggregation 类型, 可以处理的类型有Map的子类，Collection的子类，还有数组类型 <br>
@@ -204,61 +205,65 @@ public class Aggregation implements Iterable {
      * 如果class对象是个接口，则取一个实现子类来作为容器 ，如果class是个实体类容器，则调用newInstance生成对象
      * 
      * @return
-     * @throws InstantiationException NOTE：如果target是个实体类，但是没有默认构造函数
-     * @throws IllegalAccessException
-     * @throws IllegalParamException
+     * @throws IllegalParamException 没有找到匹配类型
+     * @throws UnexpectedStateException NOTE：如果target是个实体类，但是没有默认构造函数
      */
     @SuppressWarnings({ "unchecked" })
-    public Object toInstance() throws InstantiationException, IllegalAccessException, IllegalParamException {
+    public Object toInstance() throws IllegalParamException, UnexpectedStateException {
         Object aggregated = null;
+        try {
+            // target是map的子类
+            if (Map.class.isAssignableFrom(target)) {
+                if (!target.isInterface() && !Modifier.isAbstract(target.getModifiers())) {
+                    aggregated = target.newInstance();
+                    // 如果是有序map
+                } else if (target.getClass().isAssignableFrom(SortedMap.class)) {
+                    aggregated = new TreeMap();
+                } else {
+                    // 默认就是无序map
+                    aggregated = new HashMap();
+                }
 
-        // target是map的子类
-        if (Map.class.isAssignableFrom(target)) {
-            if (!target.isInterface() && !Modifier.isAbstract(target.getModifiers())) {
-                aggregated = target.newInstance();
-                // 如果是有序map
-            } else if (target.getClass().isAssignableFrom(SortedMap.class)) {
-                aggregated = new TreeMap();
+                // add data
+                for (Object obj : datas) {
+                    ((Map) aggregated).put(((Cell) obj).getKey(), ((Cell) obj).getValue());
+                }
+
+                // target是Collection的子类
+            } else if (Collection.class.isAssignableFrom(target)) {
+                if (!target.isInterface() && !Modifier.isAbstract(target.getModifiers())) {
+                    aggregated = target.newInstance();
+                } else if (target.getClass().isAssignableFrom(LinkedList.class)) {
+                    aggregated = new LinkedList();
+                } else if (target.getClass().isAssignableFrom(HashSet.class)) {
+                    aggregated = new HashSet();
+                } else {
+                    aggregated = new ArrayList();
+                }
+
+                // add data
+                for (Object obj : datas) {
+                    ((Collection) aggregated).add(obj);
+                }
+            } else if (Object[].class.isAssignableFrom(target)) {
+                Class<?> componentType = target.getComponentType();
+                aggregated = Array.newInstance(componentType, datas.size());
+                // add data
+                int pos = 0;
+                for (Object obj : datas) {
+                    Array.set(aggregated, pos++, componentType.cast(obj));
+                }
             } else {
-                // 默认就是无序map
-                aggregated = new HashMap();
+                throw new IllegalParamException("target class can't match any known collection " + target);
             }
-
-            // add data
-            for (Object obj : datas) {
-                ((Map) aggregated).put(((Cell) obj).getKey(), ((Cell) obj).getValue());
-            }
-
-            // target是Collection的子类
-        } else if (Collection.class.isAssignableFrom(target)) {
-            if (!target.isInterface() && !Modifier.isAbstract(target.getModifiers())) {
-                aggregated = target.newInstance();
-            } else if (target.getClass().isAssignableFrom(LinkedList.class)) {
-                aggregated = new LinkedList();
-            } else if (target.getClass().isAssignableFrom(HashSet.class)) {
-                aggregated = new HashSet();
-            } else {
-                aggregated = new ArrayList();
-            }
-
-            // add data
-            for (Object obj : datas) {
-                ((Collection) aggregated).add(obj);
-            }
-        } else if (Object[].class.isAssignableFrom(target)) {
-            Class<?> componentType = target.getComponentType();
-            aggregated = Array.newInstance(componentType, datas.size());
-            // add data
-            int pos = 0;
-            for (Object obj : datas) {
-                Array.set(aggregated, pos++, componentType.cast(obj));
-            }
-        } else {
-            throw new IllegalParamException("target class can't match any known collection " + target);
+            // 最后需要再判断一次
+            assertAssignable(target, aggregated);
+            return aggregated;
+        } catch (InstantiationException e) {
+            throw new UnexpectedStateException(e);
+        } catch (IllegalAccessException e) {
+            throw new UnexpectedStateException(e);
         }
-        // 最后需要再判断一次
-        assertAssignable(target, aggregated);
-        return aggregated;
     }
 
     @Override
@@ -311,7 +316,7 @@ public class Aggregation implements Iterable {
                 pos += batchSize;
             }
         } else {
-            // batch size < 0, won't split
+            // batch size <= 0, won't split
             list.add(this);
         }
         return list;

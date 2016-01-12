@@ -1,6 +1,7 @@
 package com.baidu.ascheduler.processor;
 
 import com.baidu.ascheduler.context.ProcessContext;
+import com.baidu.ascheduler.exec.DecoratableProcessor;
 
 /**
  * the processor 解析函数签名，注解等等
@@ -20,14 +21,12 @@ public final class Initd {
     public Object start(ProcessContext ctx) throws Throwable {
         // 设置builder参数
         ProcessorBuilder builder =
-                new ProcessorBuilder().setAggr(ctx.aggrInvok()).setBatch(ctx.getBatchSize() > 0)
-                        .setCache(ctx.getCacheDriver() != null).setRetry(ctx.getRetry() > 0)
-                        .setTimeout(ctx.getTimeout() > 0);
-        ;
+                new ProcessorBuilder().isParallel(ctx.parallel()).isCache(ctx.cache()).isRetry(ctx.getRetry() > 0)
+                        .isTimeout(ctx.getTimeout() > 0);
         // build 处理器对象
         DecoratableProcessor processor = builder.build();
         // 处理
-        return processor.process(ctx, ctx.getArgs());
+        return processor.doo(ctx, ctx.getArgs());
     }
 
     /**
@@ -36,10 +35,10 @@ public final class Initd {
      * @return
      * @throws Throwable
      */
-    public Object startPlain(ProcessContext ctx) throws Throwable {
-        DecoratableProcessor processor = new ProcessorBuilder().build();
-        return processor.process(ctx, ctx.getArgs());
-    }
+    // public Object startPlain(ProcessContext ctx) throws Throwable {
+    // DecoratableProcessor processor = new ProcessorBuilder().build();
+    // return processor.process(ctx, ctx.getArgs());
+    // }
 
     /**
      * 
@@ -47,8 +46,8 @@ public final class Initd {
      * @return
      * @throws Throwable
      */
-    public Object startPlainWithBatch(ProcessContext ctx) throws Throwable {
-        DecoratableProcessor processor = new ProcessorBuilder().setBatch(true).build();
-        return processor.process(ctx, ctx.getArgs());
-    }
+    // public Object startPlainWithBatch(ProcessContext ctx) throws Throwable {
+    // DecoratableProcessor processor = new ProcessorBuilder().isAggrBatch(true).build();
+    // return processor.process(ctx, ctx.getArgs());
+    // }
 }

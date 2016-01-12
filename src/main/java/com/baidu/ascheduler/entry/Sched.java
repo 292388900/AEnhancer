@@ -6,6 +6,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import com.baidu.ascheduler.ext.Cacheable;
+import com.baidu.ascheduler.ext.Splitable;
+
 /**
  * 对Cached注解的方法，有如下注意事项：<br>
  * 1、keyInParam和keyInResult使用spring expression language。<br>
@@ -26,69 +29,6 @@ import java.lang.annotation.Target;
 public @interface Sched {
 
     /**
-     * the Cache driver used 为实现类的bean name 默认为DefaultCacheDriver
-     * 
-     * @return driver的bean name
-     */
-    String cache() default "DefaultCacheDriver";
-
-    /**
-     * the expire of the data in second
-     * 
-     * @return 超时时间 秒
-     */
-    int expiration() default 3600;
-
-    /**
-     * 从集合类的参数中获取 缓存的key <br>
-     * 如果为空，则表示每个集合的元素（element）本身作为key作为参数之一传递给cache driver <br>
-     * 对于map类型的对象，上下文对象为一个Map.Entry <br>
-     * 对于一般的集合对象，上下文对象为一个元素Element <br>
-     * 
-     * @return Spring el 表达式
-     */
-    String param() default "";
-
-    /**
-     * 从集合类的结果集中获取缓存的key 如果与keyInParam()都为空， 则表示该方法不使用 聚合请求方式 <br>
-     * 对于map类型的对象，上下文对象为一个Map.Entry <br>
-     * 对于一般的集合对象，上下文对象为一个元素Element <br>
-     * 
-     * @return Spring el 表达式
-     */
-    String result() default "";
-
-    /**
-     * key的命名空间，默认空字符串则为函数签名
-     * 
-     * @return nameSpace
-     */
-    String nameSpace() default "";
-
-    /**
-     * 默认不同。所以用keyInResult来展开数据进行缓存,对于聚合类调用，必须满足：keyInResult不为空，或者keyInResultSeq不为false
-     * 
-     * @return 原方法返回的数据是不是跟param中的顺序相同
-     */
-    boolean sequential() default false;
-
-    /**
-     * 只有当批量请求有最大请求条数限制的时候才使用这个字段 <br>
-     * 
-     * @return 批量查询的一次请求大小限制
-     */
-    int batchLimit() default 0;
-
-    /**
-     * 忽略的参数列表 (数字代表第几个参数)，如果忽略则对应位置参数不加入key的计算<br>
-     * 初始位置为 0(第一个参数) <br>
-     * 比如一些获取限制参数,过滤参数等等 <br>
-     * 
-     * @return 忽略参数列表
-     */
-    int[] ignList() default {};
-
-    /**
      * 重试次数，默认为一次，即：不重试，在重试的过程中（除去最后一次调用，最后一次调用还是会“诚实”地抛出异常）会catch所有的异常<br>
      * ，所以，如果希望对受检异常的情况做特殊的重试处理，请不要使用这个参数
      * 
@@ -99,7 +39,23 @@ public @interface Sched {
     /**
      * 超时时间，毫秒，小于等于0代表不设置超时时间
      * 
+     * 可控制任意函数调用的超时，但是会增加系统负担（多线程）
+     * 
      * @return
      */
     int timeout() default 0;
+
+    Class<? extends Cacheable> cacher() default NULL.class;
+
+    Class<? extends Splitable> spliter() default NULL.class;
+
+    boolean parallel() default false;
+
+    // SPLITER TODO
+    // PARALLEL TODO
+
+    // 代表null
+    interface NULL extends Splitable, Cacheable {
+    }
+
 }

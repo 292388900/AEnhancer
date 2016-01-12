@@ -9,32 +9,36 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.baidu.ascheduler.context.ProcessContext;
+import com.baidu.ascheduler.context.ShortCircuitType;
 import com.baidu.ascheduler.exception.SchedAopException;
+import com.baidu.ascheduler.exception.ShortCircuitExcption;
 import com.baidu.ascheduler.exception.UnexpectedStateException;
+import com.baidu.ascheduler.exec.DecoratableProcessor;
 import com.baidu.ascheduler.exec.ProcessExecutor;
 
 /**
- * 对外暴露的是同步的逻辑,可以为原有函数加上超时控制
+ * 对外暴露的是同步的逻辑,可以为原有函数加上超时控制，
+ * 
+ * 需要运行的任务在别的线程，但是超时等待的逻辑在当前线程
  * 
  * @author xushuda
  *
  */
-public class SyncTimeoutProcessor implements DecoratableProcessor {
+public class SyncTimeoutProcessor extends DecoratableProcessor {
     private final static Logger logger = LoggerFactory.getLogger(SyncTimeoutProcessor.class);
-
-    private DecoratableProcessor decoratee;
 
     @Override
     public Object process(ProcessContext ctx, Object param) throws Throwable {
-        validateCtx(ctx, param);
         ProcessExecutor pool = ProcessExecutor.getInstance();
-        Future<Object> data = pool.scheduled(decoratee, ctx, param);
+        Future<Object> data = pool.submitProcess(decoratee, ctx, param);
         int timeout = ctx.getTimeout();
-        logger.info("ctxId: {} ,Timeout processor get Future at {} while timeout is {}", ctx.getCtxId(),
-                System.currentTimeMillis(), timeout);
+        logger.info("ctxId: {} ,task start at {} while timeout is {}", ctx.getCtxId(), System.currentTimeMillis(),
+                timeout);
         Object result = null;
         try {
             result = data.get(timeout, TimeUnit.MILLISECONDS);
+            logger.info("ctxId: {} ,task finished at {}", ctx.getCtxId(), System.currentTimeMillis());
+            return result;
         } catch (ExecutionException e) {
             logger.error("ctxId: {} ,error thrown by future, task error caused by: {}", ctx.getCtxId(), e);
             data.cancel(true);
@@ -48,24 +52,21 @@ public class SyncTimeoutProcessor implements DecoratableProcessor {
         } catch (TimeoutException e) {
             logger.info("ctxId: {} ,task timeout at {}", ctx.getCtxId(), System.currentTimeMillis());
             data.cancel(true);
-            // TODO add FallBackHandler，现在直接返回null
-            return null;
+            throw new ShortCircuitExcption("timeout exception", ShortCircuitType.TIMEOUT);
         }
-        logger.info("ctxId: {} ,task finished at {}", ctx.getCtxId(), System.currentTimeMillis());
-        return result;
     }
 
     @Override
-    public DecoratableProcessor decorate(DecoratableProcessor decoratee) {
-        this.decoratee = decoratee;
-        return this;
-    }
-
-    @Override
-    public void validateCtx(final ProcessContext ctx, Object param) throws SchedAopException {
+    public void preCheck(final ProcessContext ctx, Object param) throws SchedAopException {
         if (decoratee == null) {
             throw new UnexpectedStateException("TimeoutProcessor is non-terminal processor, must have a decoratee");
         }
+    }
+
+    @Override
+    protected void postCheck(ProcessContext ctx, Object ret) throws SchedAopException {
+        // TODO Auto-generated method stub
+
     }
 
 }

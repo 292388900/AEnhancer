@@ -3,9 +3,12 @@ package com.baidu.ascheduler.context;
 import java.util.Random;
 
 import org.aspectj.lang.ProceedingJoinPoint;
+import org.springframework.context.ApplicationContext;
 
-import com.baidu.ascheduler.cache.driver.CacheDriver;
+import com.baidu.ascheduler.entry.Sched;
 import com.baidu.ascheduler.exception.IllegalParamException;
+import com.baidu.ascheduler.ext.Cacheable;
+import com.baidu.ascheduler.ext.Splitable;
 
 /**
  * 处理上下文的AOP版本（从annotation中获取的信息）
@@ -18,30 +21,29 @@ import com.baidu.ascheduler.exception.IllegalParamException;
 public class AopContext implements ProcessContext {
 
     private final long ctxId;
-    // private static final Logger logger = LoggerFactory.getLogger(ProcessContext.class);
-    private SignatureInfo signature;
-    private AnnotationInfo annotation;
+    private Sched annotation;
     private final Object[] clonedArgs; // 克隆的原参数
     private ProceedingJoinPoint jp; // join point
-    private CacheDriver cacheDriver;
+    // 子流程
+    private Cacheable cacher = null;
+    private Splitable spliter = null;
 
-    // private Aggregation batchInvokAggr; // 不包含集合类外的参数
+    public AopContext(Sched annotation, ProceedingJoinPoint jp, ApplicationContext context)
+            throws InstantiationException, IllegalAccessException, IllegalParamException {
+        ctxId = new Random().nextLong();
 
-    public AopContext(SignatureInfo signature, AnnotationInfo annotation, ProceedingJoinPoint jp) {
-        this.signature = signature;
         this.annotation = annotation;
         this.jp = jp;
         clonedArgs = jp.getArgs().clone();
-        ctxId = new Random().nextLong();
-    }
 
-    @Override
-    public CacheDriver getCacheDriver() {
-        return cacheDriver;
-    }
-
-    public void setCacheDriver(CacheDriver cacheDriver) {
-        this.cacheDriver = cacheDriver;
+        if (annotation.cacher() != Sched.NULL.class) {
+            cacher = annotation.cacher().newInstance();
+            cacher.init(jp, context);
+        }
+        if (annotation.spliter() != Sched.NULL.class) {
+            spliter = annotation.spliter().newInstance();
+            spliter.init(jp, context);
+        }
     }
 
     /**
@@ -66,25 +68,25 @@ public class AopContext implements ProcessContext {
         return jp.proceed(args);
     }
 
-    /**
-     * 获取批量处理的限制
-     * 
-     * @return
-     */
-    @Override
-    public int getBatchSize() {
-        return annotation.getBatchSize();
-    }
+    // /**
+    // * 获取批量处理的限制
+    // *
+    // * @return
+    // */
+    // @Override
+    // public int getBatchSize() {
+    // return annotation.getBatchSize();
+    // }
 
     /**
      * 获取忽略参数列表
      * 
      * @return
      */
-    @Override
-    public int[] getIgnoreList() {
-        return annotation.getIgnList();
-    }
+    // @Override
+    // public int[] getIgnoreList() {
+    // return annotation.getIgnList();
+    // }
 
     /**
      * 从参数集合中的一个对象获取key
@@ -93,10 +95,10 @@ public class AopContext implements ProcessContext {
      * @return
      * @throws IllegalParamException
      */
-    @Override
-    public Object getKeyFromParam(Object paramElement) throws IllegalParamException {
-        return annotation.extParam(paramElement);
-    }
+    // @Override
+    // public Object getKeyFromParam(Object paramElement) throws IllegalParamException {
+    // return annotation.extParam(paramElement);
+    // }
 
     /**
      * 从结果的一个对象取得Key
@@ -105,10 +107,10 @@ public class AopContext implements ProcessContext {
      * @return
      * @throws IllegalParamException
      */
-    @Override
-    public Object getKeyFromResult(Object resultElement) throws IllegalParamException {
-        return annotation.extResult(resultElement);
-    }
+    // @Override
+    // public Object getKeyFromResult(Object resultElement) throws IllegalParamException {
+    // return annotation.extResult(resultElement);
+    // }
 
     /**
      * 将原有参数中的聚合类参数替换为入参的对象
@@ -116,75 +118,75 @@ public class AopContext implements ProcessContext {
      * @param keys
      * @return
      */
-    @Override
-    public Object[] replaceArgsWithKeys(Object keys) {
-        clonedArgs[signature.getPosition()] = keys;
-        return clonedArgs;
-    }
+    // @Override
+    // public Object[] replaceArgsWithKeys(Object keys) {
+    // clonedArgs[signature.getPosition()] = keys;
+    // return clonedArgs;
+    // }
 
     /**
      * 过期时间，秒
      * 
      * @return
      */
-    @Override
-    public int getExpiration() {
-        return annotation.getExpiration();
-    }
+    // @Override
+    // public int getExpiration() {
+    // return annotation.getExpiration();
+    // }
 
     /**
      * 对于AggrInvok中的集合对象参数
      * 
      * @return
      */
-    @Override
-    public Class<?> getAggParamType() {
-        return signature.getAggParamType();
-    }
+    // @Override
+    // public Class<?> getAggParamType() {
+    // return signature.getAggParamType();
+    // }
 
     /**
      * 返回值类型
      * 
      * @return
      */
-    @Override
-    public Class<?> getRetType() {
-        return signature.getRetType();
-    }
+    // @Override
+    // public Class<?> getRetType() {
+    // return signature.getRetType();
+    // }
 
     /**
      * 获取keySpace
      * 
      * @return
      */
-    @Override
-    public String getNameSpace() {
-        return annotation.getNameSpace().equals("") ? signature.getSignature() : annotation.getNameSpace();
-    }
+    // @Override
+    // public String getNameSpace() {
+    // return annotation.getNameSpace().equals("") ? signature.getSignature() : annotation.getNameSpace();
+    // }
 
     /**
      * 是否是聚合式调用
      * 
      * @return
      */
-    @Override
-    public boolean aggrInvok() {
-        return annotation.aggrInvok();
-    }
+    // @Override
+    // public boolean aggrInvok() {
+    // return annotation.aggrInvok();
+    // }
 
     @Override
     public int getRetry() {
-        return annotation.getRetryTimes();
+        return annotation.retry();
     }
 
     /**
      * 
      * @return
      */
-    @Override
-    public boolean relyOnSeqResult() {
-        return annotation.isResultSequential();
-    }
+    // @Override
+    // public boolean relyOnSeqResult() {
+    // return annotation.isResultSequential();
+    // }
 
     @Override
     public long getCtxId() {
@@ -196,14 +198,39 @@ public class AopContext implements ProcessContext {
      * 
      * @return
      */
-    @Override
-    public int getAggrPosition() {
-        return signature.getPosition();
-    }
+    // @Override
+    // public int getAggrPosition() {
+    // return signature.getPosition();
+    // }
 
     @Override
     public int getTimeout() {
-        return annotation.getTimeout();
+        return annotation.timeout();
+    }
+
+    @Override
+    public Cacheable getCacher() {
+        return cacher;
+    }
+
+    @Override
+    public Splitable getSpliter() {
+        return spliter;
+    }
+
+    @Override
+    public boolean split() {
+        return spliter != null;
+    }
+
+    @Override
+    public boolean cache() {
+        return cacher != null;
+    }
+
+    @Override
+    public boolean parallel() {
+        return annotation.parallel();
     }
 
 }

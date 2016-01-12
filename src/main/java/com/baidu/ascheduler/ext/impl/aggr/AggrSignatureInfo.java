@@ -1,16 +1,14 @@
-package com.baidu.ascheduler.context;
-
-import java.util.Map;
+package com.baidu.ascheduler.ext.impl.aggr;
 
 import org.aspectj.lang.Signature;
 
 /**
- * signature info
+ * signature info for aggr
  * 
  * @author xushuda
  *
  */
-public class SignatureInfo {
+public class AggrSignatureInfo {
     private Class<?> retType;
     private Class<?> aggParamType;
     private int position;
@@ -54,7 +52,7 @@ public class SignatureInfo {
      * @param aggParamType may be null
      * @param position
      */
-    public SignatureInfo(Class<?> retType, Class<?> aggParamType, int position, Signature signature) {
+    public AggrSignatureInfo(Class<?> retType, Class<?> aggParamType, int position, Signature signature) {
         this.retType = retType;
         this.aggParamType = aggParamType;
         this.position = position;
@@ -74,19 +72,6 @@ public class SignatureInfo {
     public boolean sequentialAggrAccessible() {
         return retType != null && aggParamType != null && Aggregation.isAggregationType(retType)
                 && Aggregation.isSequentialType(aggParamType);
-    }
-
-    public boolean retMap() {
-        return Map.class.isAssignableFrom(retType);
-    }
-
-    /**
-     * not used currently
-     * 
-     * @return
-     */
-    public boolean kvAggregated() {
-        return aggrAccessible() && retMap();
     }
 
     @Override
