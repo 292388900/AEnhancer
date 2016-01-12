@@ -16,7 +16,6 @@ import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 
-import com.baidu.ascheduler.cache.driver.CacheDriver;
 import com.baidu.ascheduler.context.ProcessContext;
 import com.baidu.ascheduler.exception.IllegalParamException;
 import com.baidu.ascheduler.exception.SchedAopException;

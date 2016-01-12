@@ -15,10 +15,9 @@
 	<bean
 		class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor" />
 	<bean id="cacheAop" class="com.baidu.ascheduler.entry.SchedAspect"></bean>
-	<bean id="cacheFactory" class="com.baidu.ascheduler.cache.driver.DefaultCacheDriverFactory" />
 
 	<bean name="DefaultCacheDriver" class="com.baidu.ascheduler.RedisHa" />
-	<bean name="NopDriver" class="com.baidu.ascheduler.cache.driver.NopCacheDriver" />
+	<bean name="NopDriver" class="com.baidu.ascheduler.ext.impl.aggr.NopCacheDriver" />
 
 	<bean
 		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">

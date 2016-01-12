@@ -32,7 +32,6 @@ public class AsyncSplitNTimeoutProcessor extends DecoratableProcessor {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public Object process(final ProcessContext ctx, final Object p) throws Throwable {
-        // Spliter spliter = SpliterFactory.getSpliter(null); // FIXME get class 如果子调用为Async，这里需要是AsyncSpliter
         Splitable spliter = ctx.getSpliter();
         // ctx
         spliter.beforeProcess(ctx, this);
@@ -41,10 +40,13 @@ public class AsyncSplitNTimeoutProcessor extends DecoratableProcessor {
         // 结果集合
         List<Object> results = new ArrayList<Object>();
         try {
+            logger.info("ctxId: {}, {} jobs committed at {} with timeout(0 for immortals): {}", ctx.getCtxId(),
+                    params.size(), System.currentTimeMillis(), ctx.getTimeout());
             // 在这个方法这里可能会阻塞timeout 秒时长
             List<Future<Object>> futures =
                     ctx.getTimeout() > 0 ? ProcessExecutor.getInstance().submitProcess(decoratee, ctx, params,
                             ctx.getTimeout()) : ProcessExecutor.getInstance().submitProcess(decoratee, ctx, params);
+            // 如果没有被rej，interrupt，则都完成
             for (Future<Object> future : futures) {
                 // 如果取消（超时未完成会变为取消）
                 if (future.isCancelled()) {
@@ -53,17 +55,20 @@ public class AsyncSplitNTimeoutProcessor extends DecoratableProcessor {
                 results.add(future.get());
             }
             // collapse
-            logger.info("ctxId: {}, get all splited task completed successfully ", ctx.getCtxId());
+            logger.info("ctxId: {}, get all splited task completed successfully at time:{} ", ctx.getCtxId(),
+                    System.currentTimeMillis());
             return spliter.collapse(results);
         } catch (InterruptedException e) {
-            logger.info("ctxId: {} ,interrupted while waiting for splited task to complete cause: {}", ctx.getCtxId(),
-                    e);
+            logger.info("ctxId: {} ,interrupted while waiting for splited task to complete at time:{} cause: {}",
+                    ctx.getCtxId(), System.currentTimeMillis(), e);
             throw e; // throw
         } catch (ExecutionException e) {
-            logger.error("ctxId: {} ,error thrown by future,splited task error caused by: {}", ctx.getCtxId(), e);
+            logger.error("ctxId: {} ,error thrown by future,splited task error at time:{}  caused by: {}",
+                    ctx.getCtxId(), System.currentTimeMillis(), e);
             throw e;
         } catch (RejectedExecutionException e) {
-            logger.error("ctxId: {} , executor reject new task caused by: {}", ctx.getCtxId(), e);
+            logger.error("ctxId: {} , executor reject new task at time:{}  caused by: {}", ctx.getCtxId(),
+                    System.currentTimeMillis(), e);
             throw new ShortCircuitExcption("task rejcted", ShortCircuitType.TASK_REJ);
         }
 
@@ -76,7 +81,6 @@ public class AsyncSplitNTimeoutProcessor extends DecoratableProcessor {
 
     @Override
     protected void postCheck(ProcessContext ctx, Object ret) throws SchedAopException {
-        // TODO Auto-generated method stub
 
     }
 
