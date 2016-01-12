@@ -7,8 +7,6 @@ import com.baidu.ascheduler.exception.SchedAopException;
  * 
  * @author xushuda
  *
- * @param <RET> 返回的范型
- * @param <PARAM> 参数的范型
  */
 public abstract class DecoratableProcessor {
     /**

@@ -12,7 +12,7 @@ import org.springframework.context.ApplicationContextAware;
 import com.baidu.ascheduler.context.AopContext;
 import com.baidu.ascheduler.context.ProcessContext;
 import com.baidu.ascheduler.exception.SchedAopException;
-import com.baidu.ascheduler.processor.Initd;
+import com.baidu.ascheduler.exec.Initd;
 
 /**
  * 定义Cached修饰的切点（point cut）和它的连接点（join point）处理

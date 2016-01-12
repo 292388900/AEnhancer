@@ -58,10 +58,7 @@ public class ProcessExecutor {
         };
         execService =
                 new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory);
-        // execService = Executors.newScheduledThreadPool(corePoolSize, threadFactory);
-        // execService = Executors.newFixedThreadPool(3,threadFactory);
         logger.info("executor is inited");
-
     }
 
     /**

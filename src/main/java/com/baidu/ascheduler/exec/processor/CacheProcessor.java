@@ -1,4 +1,4 @@
-package com.baidu.ascheduler.processor;
+package com.baidu.ascheduler.exec.processor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
