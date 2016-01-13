@@ -9,15 +9,15 @@
             http://www.springframework.org/schema/aop 
             http://www.springframework.org/schema/aop/spring-aop-3.1.xsd">
 	<!-- annotation driven cache 需要在你的applicationContext.xml中加入如下配置 -->
-	<context:component-scan base-package="com.baidu.ascheduler" />
+	<!-- <context:component-scan base-package="com.baidu.aenhancer" /> -->
 	<aop:aspectj-autoproxy />
 	<bean
 		class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor" />
 	<!-- point cut 入口 -->
-	<bean id="SchedAop" class="com.baidu.ascheduler.entry.SchedAspect" />
+	<bean id="SchedAop" class="com.baidu.aenhancer.entry.EnhancerAspect" />
 	<!-- 可以实现多个cacheDriver，并在注解中driver＝beanName选择需要的bean，DefaultDriver是缺省的driver -->
 	<bean name="DefaultCacheDriver"
 		class="your.implementation.of.com.baidu.ascheduler.cache.driver.cacheDriver" />
 	<!-- 自带的no opertation driver -->
-	<bean name="NopDriver" class="com.baidu.ascheduler.cache.driver.NopCacheDriver" />
+	<bean name="NopDriver" class="com.baidu.aenhancer.ext.impl.aggr.NopCacheDriver" />
 </beans>

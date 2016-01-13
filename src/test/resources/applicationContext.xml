@@ -9,15 +9,15 @@
             http://www.springframework.org/schema/aop 
             http://www.springframework.org/schema/aop/spring-aop-3.1.xsd">
 
-	<context:component-scan base-package="com.baidu.ascheduler" />
+	<context:component-scan base-package="com.baidu.aenhancer" />
 	<!-- annotation driven cache -->
 	<aop:aspectj-autoproxy />
 	<bean
 		class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor" />
-	<bean id="cacheAop" class="com.baidu.ascheduler.entry.SchedAspect"></bean>
+	<bean id="aop" class="com.baidu.aenhancer.entry.EnhancerAspect"></bean>
 
-	<bean name="DefaultCacheDriver" class="com.baidu.ascheduler.RedisHa" />
-	<bean name="NopDriver" class="com.baidu.ascheduler.ext.impl.aggr.NopCacheDriver" />
+	<bean name="DefaultCacheDriver" class="com.baidu.aenhancer.RedisHa" />
+	<bean name="NopDriver" class="com.baidu.aenhancer.ext.impl.aggr.NopCacheDriver" />
 
 	<bean
 		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
