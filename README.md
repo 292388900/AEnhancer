@@ -6,7 +6,7 @@ Mainly for increasing developer productivity and application stability when usin
 透明接入现有代码，In Most Cases：无代码入侵
 
 # 使用场景：
-
+```
 主要在对远程接口调用的时候，或者一些等待I/O等的操作。提供轻量级的控制与增强。
 	1、提供异常重试（指定重试次数，默认1不重试）
 	2、提供对结果的缓存
@@ -24,9 +24,9 @@ Mainly for increasing developer productivity and application stability when usin
     		2）支持配置不同存储介质，已提供对RedisHa的适配实现
     		3）支持spEL自定义缓存key，缓存支持部分命中
 			4）可提供手动刷新缓存等方法的支持
-
+```
 ## 示例：
-
+```
    a.比如想为某个接口添加超时控制：
 		@Enhancer( timeout = 100 )
 		public Return task(Param p) {
@@ -51,12 +51,14 @@ Mainly for increasing developer productivity and application stability when usin
     	)
     	public List<TaskResult> runTask(String[] args, Object paramX)
    PS：所有支持的特性都是“正交的”
+```
 
 # Development
 ##	基本架构:
 
 ##	模块组件：
    1、processor：最基本的模块，逻辑上代表一个功能点。使用“装饰模式（Decorator）”，类似于标准库的文件IO类型。比如TimeoutProcessor提供超时控制，CacheProcessor提供缓存控制。所有processor继承自Processor，得以引用下一个processor（类似一个processor的引用链）。程序可以修改processor之间的引用顺序，或者实现新的processor从而将多个processor的提供的功能“组装”起来。processor的引用链默认的实现使用了“建造者（Builder）”模式来生成最终对象。
+
    2、extension：代表了对processor处理过程的进一步抽象。extension（依赖对应的processor）提供“模版方法模式（Template）”，使得用户可以方便地替换processor的实现。CodeBase中现有的几个extension：fallback，hook，split都提供声明式（注解）的扩展，即不用实现特定的接口。
 
 	
