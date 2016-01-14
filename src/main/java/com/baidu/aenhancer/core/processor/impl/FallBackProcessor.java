@@ -4,10 +4,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.baidu.aenhancer.core.context.ProcessContext;
-import com.baidu.aenhancer.core.processor.DecoratableProcessor;
+import com.baidu.aenhancer.core.processor.Processor;
 import com.baidu.aenhancer.core.processor.ext.FallbackProxy;
 
-public class FallBackProcessor extends DecoratableProcessor {
+public class FallBackProcessor extends Processor {
+    public FallBackProcessor(Processor decoratee) {
+        super(decoratee);
+    }
+
     private final static Logger logger = LoggerFactory.getLogger(FallBackProcessor.class);
 
     @Override

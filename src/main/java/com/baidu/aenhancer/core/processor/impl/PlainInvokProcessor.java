@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.baidu.aenhancer.core.context.ProcessContext;
-import com.baidu.aenhancer.core.processor.DecoratableProcessor;
+import com.baidu.aenhancer.core.processor.Processor;
 import com.baidu.aenhancer.exception.UnexpectedStateException;
 
 /**
@@ -13,7 +13,11 @@ import com.baidu.aenhancer.exception.UnexpectedStateException;
  * @author xushuda
  *
  */
-public class PlainInvokProcessor extends DecoratableProcessor {
+public class PlainInvokProcessor extends Processor {
+    public PlainInvokProcessor(Processor decoratee) {
+        super(decoratee);
+    }
+
     private Logger logger = LoggerFactory.getLogger(PlainInvokProcessor.class);
 
     @Override

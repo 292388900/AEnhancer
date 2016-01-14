@@ -6,10 +6,11 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import com.baidu.aenhancer.core.processor.ext.Cacheable;
+import com.baidu.aenhancer.core.processor.Hooker;
+import com.baidu.aenhancer.core.processor.ext.CacheProxy;
 import com.baidu.aenhancer.core.processor.ext.Fallbackable;
+import com.baidu.aenhancer.core.processor.ext.Hookable;
 import com.baidu.aenhancer.core.processor.ext.Splitable;
-
 
 @Target({ ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)
@@ -33,18 +34,35 @@ public @interface Enhancer {
      */
     int timeout() default 0;
 
+    /**
+     * 是否可用并行
+     * 
+     * @return
+     */
     boolean parallel() default false;
 
+    /**
+     * 所属的“组”
+     * 
+     * @return
+     */
     String group() default "";
 
-    Class<? extends Cacheable> cacher() default NULL.class;
+    Class<? extends CacheProxy> cacher() default NULL.class;
 
     Class<? extends Splitable> spliter() default NULL.class;
 
     Class<? extends Fallbackable> fallback() default NULL.class;
 
+    /**
+     * 默认Hookable的实现
+     * 
+     * @return
+     */
+    Class<? extends Hookable> hook() default Hooker.class;
+
     // 代表null
-    interface NULL extends Splitable, Cacheable, Fallbackable {
+    interface NULL extends Splitable, CacheProxy, Fallbackable {
     }
 
 }

@@ -77,36 +77,36 @@ public class ProcessorBuilder {
      * 
      * @return
      */
-    public DecoratableProcessor build() {
-        DecoratableProcessor processor = new PlainInvokProcessor();
+    public Processor build() {
+        Processor processor = new PlainInvokProcessor(null);
         // 重试
         if (retry) {
-            processor = new RetryProcessor().decorate(processor);
+            processor = new RetryProcessor(processor);
         }
         if (parallel) {
             // split and timeout
             if (timeout || split) {
-                processor = new AsyncSplitNTimeoutProcessor().decorate(processor);
+                processor = new AsyncSplitNTimeoutProcessor(processor);
             }
         } else {
             if (timeout) {
                 // timeout
-                processor = new SyncTimeoutProcessor().decorate(processor);
+                processor = new SyncTimeoutProcessor(processor);
             }
             if (split) {
                 // split
-                processor = new SyncSplitProcessor().decorate(processor);
+                processor = new SyncSplitProcessor(processor);
             }
         }
 
         // cache
         if (cache) {
-            processor = new CacheProcessor().decorate(processor);
+            processor = new CacheProcessor(processor);
         }
         
         // fallback
         if (fallback) {
-            processor = new FallBackProcessor().decorate(processor);
+            processor = new FallBackProcessor(processor);
         }
         return processor;
     }

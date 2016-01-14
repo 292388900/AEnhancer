@@ -8,11 +8,15 @@ import com.baidu.aenhancer.exception.EnhancerRuntimeException;
  * @author xushuda
  *
  */
-public abstract class DecoratableProcessor {
+public abstract class Processor {
     /**
      * 
      */
-    protected DecoratableProcessor decoratee;
+    protected Processor decoratee;
+
+    public Processor(Processor decoratee) {
+        this.decoratee = decoratee;
+    }
 
     public final Object doo(ProcessContext ctx, Object param) throws Throwable {
         preCheck(ctx, param);
@@ -32,12 +36,12 @@ public abstract class DecoratableProcessor {
     protected abstract Object process(ProcessContext ctx, Object param) throws Throwable;
 
     /**
-     * 装饰另一个processor
+     * 让另一个processor hook到当前的processor后面
      * 
      * @param decoratee
      * @return
      */
-    public final DecoratableProcessor decorate(DecoratableProcessor decoratee) {
+    public final Processor hookee(Processor decoratee) {
         this.decoratee = decoratee;
         return this;
     }

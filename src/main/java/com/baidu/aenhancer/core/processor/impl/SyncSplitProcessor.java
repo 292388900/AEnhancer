@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.baidu.aenhancer.core.context.ProcessContext;
-import com.baidu.aenhancer.core.processor.DecoratableProcessor;
+import com.baidu.aenhancer.core.processor.Processor;
 import com.baidu.aenhancer.core.processor.ext.SplitProxy;
 import com.baidu.aenhancer.exception.UnexpectedStateException;
 
@@ -17,7 +17,11 @@ import com.baidu.aenhancer.exception.UnexpectedStateException;
  * @author xushuda
  *
  */
-public class SyncSplitProcessor extends DecoratableProcessor {
+public class SyncSplitProcessor extends Processor {
+
+    public SyncSplitProcessor(Processor decoratee) {
+        super(decoratee);
+    }
 
     private Logger logger = LoggerFactory.getLogger(SyncSplitProcessor.class);
 

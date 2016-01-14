@@ -1,14 +1,30 @@
 package com.baidu.aenhancer.core.processor;
 
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.springframework.context.ApplicationContext;
+
 import com.baidu.aenhancer.core.context.ProcessContext;
+import com.baidu.aenhancer.core.processor.ext.HookProxy;
+import com.baidu.aenhancer.exception.CodingError;
 
 /**
- * 入口
+ * 默认的Hook入口
  * 
  * @author xushuda
  *
  */
-public final class Initd {
+public final class Hooker implements HookProxy {
+    // ctx
+    private ProcessContext ctx;
+
+    @Override
+    public void init(ProceedingJoinPoint jp, ApplicationContext context) throws CodingError {
+    }
+
+    @Override
+    public void beforeProcess(ProcessContext ctx, Processor currentProcess) {
+        this.ctx = ctx;
+    }
 
     /**
      * 正常的处理流程 生成processor的规则，顺序在这里制定
@@ -17,13 +33,14 @@ public final class Initd {
      * @return
      * @throws Throwable
      */
-    public Object start(ProcessContext ctx) throws Throwable {
+    @Override
+    public Object call(Object[] param) throws Throwable {
         // 设置builder参数
         ProcessorBuilder builder =
                 new ProcessorBuilder().isParallel(ctx.parallel()).isCache(ctx.cache()).isRetry(ctx.getRetry() > 0)
                         .isTimeout(ctx.getTimeout() > 0).isFallback(ctx.fallback()).isSplit(ctx.split());
         // build 处理器对象
-        DecoratableProcessor processor = builder.build();
+        Processor processor = builder.build();
         // 处理
         return processor.doo(ctx, ctx.getArgs());
     }

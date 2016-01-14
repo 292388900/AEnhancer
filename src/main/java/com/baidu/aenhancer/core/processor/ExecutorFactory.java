@@ -40,6 +40,7 @@ public class ExecutorFactory {
         executorPool = new ConcurrentHashMap<String, ExecutorService>();
     }
 
+    // TODO add configuration for corePoolSize and so on
     private ExecutorService newExecSrv() {
         int corePoolSize = 5;
         int maximumPoolSize = 10;
@@ -88,7 +89,7 @@ public class ExecutorFactory {
      * @param param
      * @return
      */
-    public Future<Object> submitProcess(String group, final DecoratableProcessor processor, final ProcessContext ctx,
+    public Future<Object> submitProcess(String group, final Processor processor, final ProcessContext ctx,
             final Object param) {
         ExecutorService execSrv = getByGroup(group);
         // 需要执行的方法
@@ -120,7 +121,7 @@ public class ExecutorFactory {
      * @return
      * @throws InterruptedException
      */
-    public List<Future<Object>> submitProcess(String group, final DecoratableProcessor processor,
+    public List<Future<Object>> submitProcess(String group, final Processor processor,
             final ProcessContext ctx, final List<Object> params, long timeout) throws InterruptedException {
         ExecutorService execSrv = getByGroup(group);
 
@@ -155,7 +156,7 @@ public class ExecutorFactory {
      * @return
      * @throws InterruptedException
      */
-    public List<Future<Object>> submitProcess(String group, final DecoratableProcessor processor,
+    public List<Future<Object>> submitProcess(String group, final Processor processor,
             final ProcessContext ctx, final List<Object> params) throws InterruptedException {
         ExecutorService execSrv = getByGroup(group);
 

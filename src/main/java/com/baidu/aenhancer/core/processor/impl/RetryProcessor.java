@@ -4,10 +4,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.baidu.aenhancer.core.context.ProcessContext;
-import com.baidu.aenhancer.core.processor.DecoratableProcessor;
+import com.baidu.aenhancer.core.processor.Processor;
 import com.baidu.aenhancer.exception.UnexpectedStateException;
 
-public class RetryProcessor extends DecoratableProcessor {
+public class RetryProcessor extends Processor {
+    
+    public RetryProcessor(Processor decoratee) {
+        super(decoratee);
+    }
+
     private Logger logger = LoggerFactory.getLogger(RetryProcessor.class);
 
     @Override

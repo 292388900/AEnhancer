@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import com.baidu.aenhancer.core.context.ProcessContext;
 import com.baidu.aenhancer.core.context.ShortCircuitType;
-import com.baidu.aenhancer.core.processor.DecoratableProcessor;
+import com.baidu.aenhancer.core.processor.Processor;
 import com.baidu.aenhancer.core.processor.ExecutorFactory;
 import com.baidu.aenhancer.exception.ShortCircuitExcption;
 import com.baidu.aenhancer.exception.UnexpectedStateException;
@@ -24,7 +24,12 @@ import com.baidu.aenhancer.exception.UnexpectedStateException;
  * @author xushuda
  *
  */
-public class SyncTimeoutProcessor extends DecoratableProcessor {
+public class SyncTimeoutProcessor extends Processor {
+    
+    public SyncTimeoutProcessor(Processor decoratee) {
+        super(decoratee);
+    }
+
     private final static Logger logger = LoggerFactory.getLogger(SyncTimeoutProcessor.class);
 
     @Override

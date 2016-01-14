@@ -4,7 +4,7 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.springframework.context.ApplicationContext;
 
 import com.baidu.aenhancer.core.context.ProcessContext;
-import com.baidu.aenhancer.core.processor.DecoratableProcessor;
+import com.baidu.aenhancer.core.processor.Processor;
 import com.baidu.aenhancer.exception.CodingError;
 import com.baidu.aenhancer.exception.IllegalParamException;
 
@@ -31,5 +31,5 @@ public interface Contextural {
      * @param ctx
      * @param currentProcess
      */
-    public void beforeProcess(ProcessContext ctx, DecoratableProcessor currentProcess);
+    public void beforeProcess(ProcessContext ctx, Processor currentProcess);
 }

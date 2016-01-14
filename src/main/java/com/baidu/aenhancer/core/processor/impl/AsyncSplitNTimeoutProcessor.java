@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import com.baidu.aenhancer.core.context.ProcessContext;
 import com.baidu.aenhancer.core.context.ShortCircuitType;
-import com.baidu.aenhancer.core.processor.DecoratableProcessor;
+import com.baidu.aenhancer.core.processor.Processor;
 import com.baidu.aenhancer.core.processor.ExecutorFactory;
 import com.baidu.aenhancer.core.processor.ext.SplitProxy;
 import com.baidu.aenhancer.exception.ShortCircuitExcption;
@@ -24,7 +24,11 @@ import com.baidu.aenhancer.exception.ShortCircuitExcption;
  * @author xushuda
  *
  */
-public class AsyncSplitNTimeoutProcessor extends DecoratableProcessor {
+public class AsyncSplitNTimeoutProcessor extends Processor {
+
+    public AsyncSplitNTimeoutProcessor(Processor decoratee) {
+        super(decoratee);
+    }
 
     private final static Logger logger = LoggerFactory.getLogger(AsyncSplitNTimeoutProcessor.class);
 

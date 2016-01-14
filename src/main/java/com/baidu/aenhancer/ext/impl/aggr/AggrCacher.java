@@ -17,8 +17,8 @@ import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 
 import com.baidu.aenhancer.core.context.ProcessContext;
-import com.baidu.aenhancer.core.processor.DecoratableProcessor;
-import com.baidu.aenhancer.core.processor.ext.Cacheable;
+import com.baidu.aenhancer.core.processor.Processor;
+import com.baidu.aenhancer.core.processor.ext.CacheProxy;
 import com.baidu.aenhancer.exception.CodingError;
 import com.baidu.aenhancer.exception.IllegalParamException;
 import com.baidu.aenhancer.exception.UnexpectedStateException;
@@ -29,7 +29,7 @@ import com.baidu.aenhancer.exception.UnexpectedStateException;
  * @author xushuda
  *
  */
-public class AggrCacher implements Cacheable {
+public class AggrCacher implements CacheProxy {
 
     private static final String FIXED = "FIXED";
 
@@ -85,7 +85,7 @@ public class AggrCacher implements Cacheable {
     }
 
     @Override
-    public void beforeProcess(ProcessContext ctx, DecoratableProcessor currentProcess) {
+    public void beforeProcess(ProcessContext ctx, Processor currentProcess) {
         this.ctx = ctx;
     }
 

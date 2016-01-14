@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 
 import com.baidu.aenhancer.core.context.ProcessContext;
-import com.baidu.aenhancer.core.processor.DecoratableProcessor;
+import com.baidu.aenhancer.core.processor.Processor;
 import com.baidu.aenhancer.core.processor.ext.SplitProxy;
 import com.baidu.aenhancer.exception.CodingError;
 import com.baidu.aenhancer.exception.EnhancerRuntimeException;
@@ -64,7 +64,7 @@ public final class AggrSpliter implements SplitProxy {
     }
 
     @Override
-    public void beforeProcess(ProcessContext ctx, DecoratableProcessor currentProcess) {
+    public void beforeProcess(ProcessContext ctx, Processor currentProcess) {
 
     }
 }

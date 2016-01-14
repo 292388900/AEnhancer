@@ -4,17 +4,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.baidu.aenhancer.core.context.ProcessContext;
-import com.baidu.aenhancer.core.processor.DecoratableProcessor;
-import com.baidu.aenhancer.core.processor.ext.Cacheable;
+import com.baidu.aenhancer.core.processor.Processor;
+import com.baidu.aenhancer.core.processor.ext.CacheProxy;
 
-public class CacheProcessor extends DecoratableProcessor {
+public class CacheProcessor extends Processor {
+
+    public CacheProcessor(Processor decoratee) {
+        super(decoratee);
+    }
 
     private final static Logger logger = LoggerFactory.getLogger(CacheProcessor.class);
 
     @Override
     protected Object process(ProcessContext ctx, Object param) throws Throwable {
         // get cache
-        Cacheable cache = ctx.getCacher();
+        CacheProxy cache = ctx.getCacher();
         // init
         cache.beforeProcess(ctx, this);
         // 参数或者结果

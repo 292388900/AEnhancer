@@ -11,7 +11,8 @@ import org.springframework.context.ApplicationContextAware;
 
 import com.baidu.aenhancer.core.context.AopContext;
 import com.baidu.aenhancer.core.context.ProcessContext;
-import com.baidu.aenhancer.core.processor.Initd;
+import com.baidu.aenhancer.core.processor.Processor;
+import com.baidu.aenhancer.core.processor.impl.EverythingStartFromHere;
 import com.baidu.aenhancer.exception.EnhancerCheckedException;
 
 /**
@@ -24,9 +25,6 @@ import com.baidu.aenhancer.exception.EnhancerCheckedException;
 public class EnhancerAspect implements ApplicationContextAware {
 
     private static final Logger logger = LoggerFactory.getLogger(EnhancerAspect.class);
-
-    // 没有用spring托管
-    private Initd initd = new Initd();
 
     private ApplicationContext applicationContext;
 
@@ -45,16 +43,17 @@ public class EnhancerAspect implements ApplicationContextAware {
         ProcessContext ctx = null;
         // 真正的数据处理阶段
         try {
-            // 这里contexturl会调用init方法，可能也会抛出异常
+            // 这个起始Processor其实不引用别的Processor，仅仅调用了上下文中的hook
+            Processor initd = new EverythingStartFromHere(null);
             ctx = new AopContext(scheduled, jp, applicationContext);
             logger.info("ctx_id: {} start : \"{}\"", ctx.getCtxId(), jp.getSignature().toLongString());
-            Object ret = initd.start(ctx);
+            Object ret = initd.doo(ctx, ctx.getArgs());
             logger.info("ctx_id: {} finished, ret: \"{}\"", ctx.getCtxId(), ret);
             return ret;
         } catch (EnhancerCheckedException e) {
-            logger.error(" ctxId: {} ,method: \"{}\",revive error occors in cache aop ,call the org process, caused by :",
+            logger.error(
+                    " ctxId: {} ,method: \"{}\",revive error occors in cache aop ,call the org process, caused by :",
                     ctx != null ? ctx.getCtxId() : 0, jp.getSignature().toLongString(), e);
-            // TODO 服务降级不应该在这里做
             // return the original call
             return jp.proceed(jp.getArgs());
         } catch (RuntimeException rtExp) {

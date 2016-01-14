@@ -8,18 +8,22 @@ import org.apache.commons.lang.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.springframework.context.ApplicationContext;
 
-import com.baidu.aenhancer.core.processor.DecoratableProcessor;
+import com.baidu.aenhancer.core.processor.Processor;
 import com.baidu.aenhancer.core.processor.ExecutorFactory;
-import com.baidu.aenhancer.core.processor.ext.Cacheable;
+import com.baidu.aenhancer.core.processor.ext.CacheProxy;
 import com.baidu.aenhancer.core.processor.ext.FallbackProxy;
 import com.baidu.aenhancer.core.processor.ext.Fallbackable;
+import com.baidu.aenhancer.core.processor.ext.HookProxy;
+import com.baidu.aenhancer.core.processor.ext.Hookable;
 import com.baidu.aenhancer.core.processor.ext.SplitProxy;
 import com.baidu.aenhancer.core.processor.ext.Splitable;
 import com.baidu.aenhancer.entry.Collapse;
 import com.baidu.aenhancer.entry.Enhancer;
 import com.baidu.aenhancer.entry.FallbackMock;
+import com.baidu.aenhancer.entry.Hook;
 import com.baidu.aenhancer.entry.Split;
 import com.baidu.aenhancer.exception.CodingError;
+import com.baidu.aenhancer.exception.UnexpectedStateException;
 
 /**
  * 处理上下文的AOP版本（从annotation中获取的信息）
@@ -36,9 +40,10 @@ public class AopContext implements ProcessContext {
     private final Object[] clonedArgs; // 克隆的原参数
     private ProceedingJoinPoint jp; // join point
     // 子流程
-    private Cacheable cacher = null;
+    private CacheProxy cacher = null;
     private SplitProxy spliter = null;
     private FallbackProxy fallback = null;
+    private HookProxy hook = null;
 
     public AopContext(Enhancer annotation, ProceedingJoinPoint jp, ApplicationContext context)
             throws InstantiationException, IllegalAccessException, CodingError {
@@ -70,6 +75,54 @@ public class AopContext implements ProcessContext {
             }
             fallback.init(jp, context);
         }
+
+        // hook
+        if (annotation.hook() == null) {
+            throw new CodingError("hook is a must have (not null) annotation, by default is Hooker.class");
+        }
+        hook = getHookProxy(annotation.hook().newInstance());
+        if (null == hook) {
+            throw new CodingError("must have a @Hook method in class: " + annotation.hook());
+        }
+        hook.init(jp, context);
+
+    }
+
+    private HookProxy getHookProxy(final Hookable userHook) {
+        if (null == userHook) {
+            return null;
+        }
+        // 本身就是Proxy类
+        if (userHook instanceof HookProxy) {
+            return HookProxy.class.cast(userHook);
+        }
+        // 根据annotation代理到Proxy上
+        for (final Method method : userHook.getClass().getDeclaredMethods()) {
+            if (method.isAnnotationPresent(Hook.class)) {
+                return new HookProxy() {
+
+                    @Override
+                    public void init(ProceedingJoinPoint jp, ApplicationContext context) throws CodingError {
+
+                    }
+
+                    @Override
+                    public void beforeProcess(ProcessContext ctx, Processor currentProcess) {
+
+                    }
+                    
+                    @Override
+                    public Object call(Object[] param) {
+                        try {
+                            return method.invoke(userHook, param);
+                        } catch (Exception e) {
+                            throw new UnexpectedStateException(e);
+                        }
+                    }
+                };
+            }
+        }
+        return null;
     }
 
     private SplitProxy getSplitProxy(final Splitable userSpliter) throws CodingError {
@@ -109,7 +162,7 @@ public class AopContext implements ProcessContext {
                     }
 
                     @Override
-                    public void beforeProcess(ProcessContext ctx, DecoratableProcessor currentProcess) {
+                    public void beforeProcess(ProcessContext ctx, Processor currentProcess) {
                         userSpliter.beforeProcess(ctx, currentProcess);
                     }
 
@@ -128,7 +181,7 @@ public class AopContext implements ProcessContext {
                         try {
                             return fcollapse.invoke(userSpliter, result);
                         } catch (Exception e) {
-                            return null;
+                            throw new UnexpectedStateException(e);
                         }
                     }
                 };
@@ -155,7 +208,7 @@ public class AopContext implements ProcessContext {
                     }
 
                     @Override
-                    public void beforeProcess(ProcessContext ctx, DecoratableProcessor currentProcess) {
+                    public void beforeProcess(ProcessContext ctx, Processor currentProcess) {
                         userFallback.beforeProcess(ctx, currentProcess);
                     }
 
@@ -164,7 +217,7 @@ public class AopContext implements ProcessContext {
                         try {
                             return method.invoke(userFallback, param);
                         } catch (Exception e) {
-                            return null;
+                            throw new UnexpectedStateException(e);
                         }
                     }
                 };
@@ -211,7 +264,7 @@ public class AopContext implements ProcessContext {
     }
 
     @Override
-    public Cacheable getCacher() {
+    public CacheProxy getCacher() {
         if (null == cacher) {
             throw new NullPointerException("cacher is null");
         }
@@ -258,5 +311,18 @@ public class AopContext implements ProcessContext {
     public String getGroup() {
         String group = annotation.group();
         return StringUtils.isEmpty(group) ? ExecutorFactory.SHARED : group;
+    }
+
+    @Override
+    public HookProxy getHook() {
+        if (null == hook) {
+            throw new NullPointerException("hook is null");
+        }
+        return hook;
+    }
+
+    @Override
+    public boolean hook() {
+        return null != hook;
     }
 }
