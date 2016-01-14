@@ -12,11 +12,26 @@ import java.lang.annotation.Target;
  * @author xushuda
  *
  */
+
 @Target({ ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface Aggr {
-
+    /**
+     * 对Aggr注解的方法，有如下注意事项：<br>
+     * 1、keyInParam和keyInResult使用spring expression language。<br>
+     * 对于map类型的对象，上下文对象为一个Map.Entry <br>
+     * 对于一般的集合对象，上下文对象为一个元素Element <br>
+     * 2、paramK这个方法用于从参数集合中获取key，来访问缓存 , keyInResult这个方法用于从结果集合中获取key，用以缓存数据。<br>
+     * 所以对于某数据，从keyInParam，keyInResult得到的key必须一致 <br>
+     * 3、keyInParam不为空，keyInResult为空且keyInResultSeq=false的情况是错误的,因为无法从原函数的返回集合展开进行缓存<br>
+     * 4、在生成key的过程中，会调用参数（聚合Invok则调用参数的每个element）的hashCode()函数，<br>
+     * 所以务必确保不在ignList中的参数都正确地重写了hashCode函数，不是简单返回对象的内存地址
+     * 
+     * @author xushuda
+     *
+     */
+    // ------------------- AGGR----------------------
     /**
      * 默认不同。所以用keyInResult来展开数据进行缓存,对于聚合类调用，必须满足：keyInResult不为空，或者keyInResultSeq不为false
      * 

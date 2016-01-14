@@ -52,8 +52,8 @@ public class EnhancerAspect implements ApplicationContextAware {
             logger.info("ctx_id: {} finished, ret: \"{}\"", ctx.getCtxId(), ret);
             return ret;
         } catch (EnhancerCheckedException e) {
-            logger.error("method: {} ,revive error occors in cache aop ,call the org process, caused by :",
-                    ctx != null ? ctx.getCtxId() : 0, e);
+            logger.error(" ctxId: {} ,method: \"{}\",revive error occors in cache aop ,call the org process, caused by :",
+                    ctx != null ? ctx.getCtxId() : 0, jp.getSignature().toLongString(), e);
             // TODO 服务降级不应该在这里做
             // return the original call
             return jp.proceed(jp.getArgs());

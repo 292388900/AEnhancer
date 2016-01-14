@@ -1,6 +1,7 @@
 package com.baidu.aenhancer.core.context;
 
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Random;
 
 import org.apache.commons.lang.StringUtils;
@@ -12,9 +13,12 @@ import com.baidu.aenhancer.core.processor.ExecutorFactory;
 import com.baidu.aenhancer.core.processor.ext.Cacheable;
 import com.baidu.aenhancer.core.processor.ext.FallbackProxy;
 import com.baidu.aenhancer.core.processor.ext.Fallbackable;
+import com.baidu.aenhancer.core.processor.ext.SplitProxy;
 import com.baidu.aenhancer.core.processor.ext.Splitable;
+import com.baidu.aenhancer.entry.Collapse;
 import com.baidu.aenhancer.entry.Enhancer;
 import com.baidu.aenhancer.entry.FallbackMock;
+import com.baidu.aenhancer.entry.Split;
 import com.baidu.aenhancer.exception.CodingError;
 
 /**
@@ -33,7 +37,7 @@ public class AopContext implements ProcessContext {
     private ProceedingJoinPoint jp; // join point
     // 子流程
     private Cacheable cacher = null;
-    private Splitable spliter = null;
+    private SplitProxy spliter = null;
     private FallbackProxy fallback = null;
 
     public AopContext(Enhancer annotation, ProceedingJoinPoint jp, ApplicationContext context)
@@ -51,7 +55,10 @@ public class AopContext implements ProcessContext {
 
         // spliter
         if (annotation.spliter() != Enhancer.NULL.class) {
-            spliter = annotation.spliter().newInstance();
+            spliter = getSplitProxy(annotation.spliter().newInstance());
+            if (null == spliter) {
+                throw new CodingError("no @Split and @Collapse Annotationed method in class: " + annotation.spliter());
+            }
             spliter.init(jp, context);
         }
 
@@ -65,10 +72,80 @@ public class AopContext implements ProcessContext {
         }
     }
 
+    private SplitProxy getSplitProxy(final Splitable userSpliter) throws CodingError {
+        if (null == userSpliter) {
+            return null;
+        }
+        if (userSpliter instanceof SplitProxy) {
+            return SplitProxy.class.cast(userSpliter);
+        }
+        Method split = null;
+        Method collapse = null;
+        for (Method method : userSpliter.getClass().getDeclaredMethods()) {
+            if (method.isAnnotationPresent(Split.class)) {
+                // 必须返回一个List的子类
+                if (!List.class.isAssignableFrom(method.getReturnType())) {
+                    throw new CodingError("spliter return type must be sub Class of List");
+                }
+                split = method;
+            } else if (method.isAnnotationPresent(Collapse.class)) {
+                Class<?>[] paramTypes = method.getParameterTypes();
+                // 实际上要把List<Object>传给这个方法，paramTypes[0].isAssignableFrom(List.class)
+                if (paramTypes.length != 1 || !paramTypes[0].isAssignableFrom(List.class)) {
+                    throw new CodingError("param of collapse must be a list");
+                }
+                collapse = method;
+            }
+            // 创建代理类
+            if (split != null && collapse != null) {
+                final Method fsplier = split;
+                final Method fcollapse = collapse;
+                return new SplitProxy() {
+
+                    @Override
+                    public void init(ProceedingJoinPoint jp, ApplicationContext context) throws CodingError {
+                        userSpliter.init(jp, context);
+
+                    }
+
+                    @Override
+                    public void beforeProcess(ProcessContext ctx, DecoratableProcessor currentProcess) {
+                        userSpliter.beforeProcess(ctx, currentProcess);
+                    }
+
+                    @SuppressWarnings("unchecked")
+                    @Override
+                    public List<Object[]> split(Object[] args) {
+                        try {
+                            return (List<Object[]>) fsplier.invoke(userSpliter, args);
+                        } catch (Exception e) {
+                            return null;
+                        }
+                    }
+
+                    @Override
+                    public Object collapse(List<Object> result) {
+                        try {
+                            return fcollapse.invoke(userSpliter, result);
+                        } catch (Exception e) {
+                            return null;
+                        }
+                    }
+                };
+            }
+        }
+        return null;
+    }
+
     private FallbackProxy genInnerFallBack(final Fallbackable userFallback) {
         if (null == userFallback) {
             return null;
         }
+        // 本身就是Proxy类
+        if (userFallback instanceof FallbackProxy) {
+            return FallbackProxy.class.cast(userFallback);
+        }
+        // 根据annotation代理到Proxy上
         for (final Method method : userFallback.getClass().getDeclaredMethods()) {
             if (method.isAnnotationPresent(FallbackMock.class)) {
                 return new FallbackProxy() {
@@ -82,12 +159,11 @@ public class AopContext implements ProcessContext {
                         userFallback.beforeProcess(ctx, currentProcess);
                     }
 
-                    @SuppressWarnings("finally")
                     @Override
                     public Object fallback(Object[] param) {
                         try {
                             return method.invoke(userFallback, param);
-                        } finally {
+                        } catch (Exception e) {
                             return null;
                         }
                     }
@@ -143,7 +219,7 @@ public class AopContext implements ProcessContext {
     }
 
     @Override
-    public Splitable getSpliter() {
+    public SplitProxy getSpliter() {
         if (null == spliter) {
             throw new NullPointerException("spliter is null");
         }

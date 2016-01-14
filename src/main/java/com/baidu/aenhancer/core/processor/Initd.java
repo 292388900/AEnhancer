@@ -21,7 +21,7 @@ public final class Initd {
         // 设置builder参数
         ProcessorBuilder builder =
                 new ProcessorBuilder().isParallel(ctx.parallel()).isCache(ctx.cache()).isRetry(ctx.getRetry() > 0)
-                        .isTimeout(ctx.getTimeout() > 0).isFallback(ctx.fallback());
+                        .isTimeout(ctx.getTimeout() > 0).isFallback(ctx.fallback()).isSplit(ctx.split());
         // build 处理器对象
         DecoratableProcessor processor = builder.build();
         // 处理

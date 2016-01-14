@@ -13,7 +13,7 @@ import com.baidu.aenhancer.core.context.ProcessContext;
 import com.baidu.aenhancer.core.context.ShortCircuitType;
 import com.baidu.aenhancer.core.processor.DecoratableProcessor;
 import com.baidu.aenhancer.core.processor.ExecutorFactory;
-import com.baidu.aenhancer.core.processor.ext.Splitable;
+import com.baidu.aenhancer.core.processor.ext.SplitProxy;
 import com.baidu.aenhancer.exception.ShortCircuitExcption;
 
 /**
@@ -31,7 +31,7 @@ public class AsyncSplitNTimeoutProcessor extends DecoratableProcessor {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public Object process(final ProcessContext ctx, final Object p) throws Throwable {
-        Splitable spliter = ctx.getSpliter();
+        SplitProxy spliter = ctx.getSpliter();
         // ctx
         spliter.beforeProcess(ctx, this);
         // split 参数

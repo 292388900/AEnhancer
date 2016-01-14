@@ -2,7 +2,7 @@ package com.baidu.aenhancer.core.context;
 
 import com.baidu.aenhancer.core.processor.ext.Cacheable;
 import com.baidu.aenhancer.core.processor.ext.FallbackProxy;
-import com.baidu.aenhancer.core.processor.ext.Splitable;
+import com.baidu.aenhancer.core.processor.ext.SplitProxy;
 
 public interface ProcessContext {
 
@@ -21,7 +21,7 @@ public interface ProcessContext {
 
     public boolean split();
 
-    public abstract Splitable getSpliter();
+    public abstract SplitProxy getSpliter();
 
     public boolean cache();
 
@@ -32,6 +32,6 @@ public interface ProcessContext {
     public boolean fallback();
 
     public abstract FallbackProxy getFallBack();
-    
+
     public String getGroup();
 }

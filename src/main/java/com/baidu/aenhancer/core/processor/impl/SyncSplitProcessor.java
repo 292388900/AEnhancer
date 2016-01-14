@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import com.baidu.aenhancer.core.context.ProcessContext;
 import com.baidu.aenhancer.core.processor.DecoratableProcessor;
-import com.baidu.aenhancer.core.processor.ext.Splitable;
+import com.baidu.aenhancer.core.processor.ext.SplitProxy;
 import com.baidu.aenhancer.exception.UnexpectedStateException;
 
 /**
@@ -29,7 +29,7 @@ public class SyncSplitProcessor extends DecoratableProcessor {
      */
     @Override
     public Object process(ProcessContext ctx, Object p) throws Throwable {
-        Splitable spliter = ctx.getSpliter();
+        SplitProxy spliter = ctx.getSpliter();
         // before
         spliter.beforeProcess(ctx, this);
         // split 参数
@@ -59,7 +59,7 @@ public class SyncSplitProcessor extends DecoratableProcessor {
     @Override
     protected void postCheck(ProcessContext ctx, Object ret) {
         // TODO Auto-generated method stub
-        
+
     }
 
 }

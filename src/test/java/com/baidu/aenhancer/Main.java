@@ -11,8 +11,7 @@ public class Main {
         // entry.getStrs(new String[] { "a", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b",
         // "b", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b" });
         entry.get(3);
-        int x = 1;
-        x = entry.testFallback();
-        System.out.print(x);
+        entry.testFallback();
+        System.out.print(entry.costomSplit(1, 2));
     }
 }

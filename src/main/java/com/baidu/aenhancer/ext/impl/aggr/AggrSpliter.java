@@ -11,11 +11,11 @@ import org.springframework.context.ApplicationContext;
 
 import com.baidu.aenhancer.core.context.ProcessContext;
 import com.baidu.aenhancer.core.processor.DecoratableProcessor;
-import com.baidu.aenhancer.core.processor.ext.Splitable;
+import com.baidu.aenhancer.core.processor.ext.SplitProxy;
 import com.baidu.aenhancer.exception.CodingError;
 import com.baidu.aenhancer.exception.EnhancerRuntimeException;
 
-public final class AggrSpliter implements Splitable {
+public final class AggrSpliter implements SplitProxy {
     private static final Logger logger = LoggerFactory.getLogger(AggrSpliter.class);
     private AggrSignatureInfo signature;
     private int batchSize;
@@ -55,13 +55,10 @@ public final class AggrSpliter implements Splitable {
     @Override
     public void init(ProceedingJoinPoint jp, ApplicationContext context) throws CodingError {
         Aggr annotation = ((MethodSignature) jp.getSignature()).getMethod().getAnnotation(Aggr.class);
-        if (null == annotation) {
-            throw new CodingError("Aggr Spliter but no @Aggr annotation");
+        if (null == annotation || annotation.batchSize() < 0) {
+            throw new CodingError("Aggr Spliter but no @Aggr annotation Or batchSize < 0");
         }
-        // batchSize
-        if (annotation.batchSize() > 0) {
-            this.batchSize = annotation.batchSize();
-        }
+        this.batchSize = annotation.batchSize();
         // TODO else skip
         signature = AggrSignatureParser.parseSignature(jp);
     }
