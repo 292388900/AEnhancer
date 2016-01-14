@@ -64,6 +64,7 @@ Mainly for increasing developer productivity and application stability when usin
 	
 ## 扩展与开发模式：
    1、直接对extension进行实现，这是最常用的开发模式。
+		
 		a.方法注解的方式
 		比如自定义一个Fallbackable类，对不同的方法进行不同的降级处理：
 		
@@ -73,9 +74,10 @@ Mainly for increasing developer productivity and application stability when usin
     	    return xxx;
 		}
    		
-   		b.直接实现相应的XXXProxy,其中有相应的接口
+		b.直接实现相应的XXXProxy,其中有相应的接口
    
-   2、开发新的processor，其实现在CodeBase中实现的这些逻辑也是使用默认的Hooker对象，hook到切面上实现的。所以如果用户想开发实现更丰富的功能，可以直接实现一个Hookable接口（这个接口的意义基本和Spring的ApplicationContextAware是一样的，使得你的类可以获得当前执行上下文的引用，所以不关心上下文的话，@Override的方法实现为空即可），然后实现任意的方法并用@Hook修饰。那么当程序执行到这个切面的时候便会Hook到用户的方法中，用户便可以自由发挥，定义新的processor，任意改变processor的顺序都可以
+   2、开发新的processor：
+   其实现在CodeBase中实现的这些逻辑也是使用默认的Hooker对象，hook到切面上实现的。所以如果用户想开发实现更丰富的功能，可以直接实现一个Hookable接口（这个接口的意义基本和Spring的ApplicationContextAware是一样的，使得你的类可以获得当前执行上下文的引用，所以不关心上下文的话，@Override的方法实现为空即可），然后实现任意的方法并用@Hook修饰。那么当程序执行到这个切面的时候便会Hook到用户的方法中，用户便可以自由发挥，定义新的processor，任意改变processor的顺序都可以
 
 	class UserHook implements Hookable {
 		@Override
