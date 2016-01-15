@@ -1,8 +1,11 @@
 package com.baidu.aenhancer.core.context;
 
+import java.lang.reflect.Method;
+
 import com.baidu.aenhancer.core.processor.ext.CacheProxy;
 import com.baidu.aenhancer.core.processor.ext.FallbackProxy;
 import com.baidu.aenhancer.core.processor.ext.HookProxy;
+import com.baidu.aenhancer.core.processor.ext.ShortCircuitable;
 import com.baidu.aenhancer.core.processor.ext.SplitProxy;
 
 public interface ProcessContext {
@@ -39,4 +42,10 @@ public interface ProcessContext {
     public abstract boolean hook();
 
     public abstract HookProxy getHook();
+
+    public Method getMothod();
+
+    public abstract boolean shortcircuit();
+
+    public abstract ShortCircuitable getShortCircuit();
 }

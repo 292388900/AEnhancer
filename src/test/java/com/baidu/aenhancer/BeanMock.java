@@ -65,7 +65,7 @@ public class BeanMock {
         return "OK";
     }
 
-    @Aggr(sequential = true, batchSize = 1)
+    @Aggr(sequential = true, aggrSize = 1)
     @Enhancer( //
             timeout = 100, // 超时时间
             cacher = AggrCacher.class, // 缓存策略：按集合对象中的元素缓存

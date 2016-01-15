@@ -1,11 +1,12 @@
 # AEnhancer
-Light Weight Method Enhancer Infrastructure for Application
-Mainly for increasing developer productivity and application stability when using Java
+`*Light Weight Method Enhancer Infrastructure for Application*
+`*Mainly for increasing developer productivity and application stability when using Java*
 
-### ABOVE ALL:
-透明接入现有代码，In Most Cases：无代码入侵
+#### ABOVE ALL:
+透明接入现有代码，In Most Cases，无代码入侵
 
-# 使用场景：
+# START UP
+## 使用场景：
 ```
 主要在对远程接口调用的时候，或者一些等待I/O等的操作。提供轻量级的控制与增强。
 	1、提供异常重试（指定重试次数，默认1不重试）
@@ -25,7 +26,9 @@ Mainly for increasing developer productivity and application stability when usin
     		3）支持spEL自定义缓存key，缓存支持部分命中
 			4）可提供手动刷新缓存等方法的支持
 ```
+
 ## 示例：
+
 ```
    a.比如想为某个接口添加超时控制：
 		@Enhancer( timeout = 100 )
@@ -43,7 +46,7 @@ Mainly for increasing developer productivity and application stability when usin
     	@Enhancer( //
         	    timeout = 100, // 超时时间
            		cacher = AggrCacher.class, // 缓存策略：按集合对象中的元素缓存
-            	spliter = AggrSpliter.class, // 拆分成多次调用的策略：反集合元素个数拆分
+            	spliter = AggrSpliter.class, // 拆分成多次调用的策略：按集合元素个数拆分
             	parallel = true, // 可并行
             	group = "ServiceGroupA", // 所属的组
             	fallback = ReturnNull.class, // 降级策略
@@ -62,8 +65,8 @@ Mainly for increasing developer productivity and application stability when usin
    2、extension：代表了对processor处理过程的进一步抽象。extension（依赖对应的processor）提供“模版方法模式（Template）”，使得用户可以方便地替换processor的实现。CodeBase中现有的几个extension：fallback，hook，split都提供声明式（注解）的扩展，即不用实现特定的接口。
 
 	
-## 扩展与开发模式：
-   1、直接对extension进行实现，这是最常用的开发模式。
+## 扩展模式：
+   `*1、直接对extension进行实现，这是最常用的开发模式。*
 		
 		a.方法注解的方式
 		比如自定义一个Fallbackable类，对不同的方法进行不同的降级处理：
@@ -76,7 +79,7 @@ Mainly for increasing developer productivity and application stability when usin
    		
 		b.直接实现相应的XXXProxy,其中有相应的接口
    
-   2、开发新的processor：
+   `*2、开发新的processor：(使用@Hook来获取完整的扩展能力)*
    其实现在CodeBase中实现的这些逻辑也是使用默认的Hooker对象，hook到切面上实现的。所以如果用户想开发实现更丰富的功能，可以直接实现一个Hookable接口（这个接口的意义基本和Spring的ApplicationContextAware是一样的，使得你的类可以获得当前执行上下文的引用，所以不关心上下文的话，@Override的方法实现为空即可），然后实现任意的方法并用@Hook修饰。那么当程序执行到这个切面的时候便会Hook到用户的方法中，用户便可以自由发挥，定义新的processor，任意改变processor的顺序都可以
 
 	class UserHook implements Hookable {
@@ -90,27 +93,34 @@ Mainly for increasing developer productivity and application stability when usin
 						// ...
 		}
                     
-		@Hookable
+		@Hook
 		public AnyType anyName(AnyParam p){
                      	// ...
 		}
 	}
 	
-   3、TODO
+   `*3、Fork此项目，自己修改源代码各个实现吧！*
 
-
+## 异常处理
+	框架定义了2种异常。1、受检框架异常。2、运行期框架异常。
+	对于1）
+		CodingError一般是注解等写的都问题，需要根据提示在开发期做出修改，会在最上层捕获。
+		ShortCricuit异常一般会在超时或者失败的时候抛出,如果有ShortCircuitProcessor支持，则会记录短路信息，并将cause继续向上抛出。否则，在最上层也会将cause抛出，cause会包装在运行时框架异常中。
+	对于2）
+		运行期异常会被直接抛出
+		
 # 注：
 配置文件参考applicationContext.xml
 
-# TODO:
+# 帮助改进:
 ``` 
 1、xml的配置方式
 2、对executor的等待队列的配置
 3、executor的各个参数的配置
 4、代理类的级别优先级控制
-5、与Spring Hibernate整合测试
-6、除了异常之外的触发FallBack 
-7、所有自有实现都使用插件化？ Done @1.15
-8、短路控制（或者降级策略的自动化）
+5、与Spring Hibernate整合多线程测试
+6、短路：流量控制，错误短路。全局的手动控制。
+~~7、所有自有实现都使用插件化~~ Done @1.15 by xushuda
+8、逻辑流图
 ```
 

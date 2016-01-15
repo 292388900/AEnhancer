@@ -13,7 +13,7 @@ import com.baidu.aenhancer.exception.CodingError;
  * @author xushuda
  *
  */
-public final class Hooker implements HookProxy {
+public final class DefaultHook implements HookProxy {
     // ctx
     private ProcessContext ctx;
 

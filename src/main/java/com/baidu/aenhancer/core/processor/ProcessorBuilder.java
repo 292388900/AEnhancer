@@ -5,6 +5,7 @@ import com.baidu.aenhancer.core.processor.impl.CacheProcessor;
 import com.baidu.aenhancer.core.processor.impl.FallBackProcessor;
 import com.baidu.aenhancer.core.processor.impl.PlainInvokProcessor;
 import com.baidu.aenhancer.core.processor.impl.RetryProcessor;
+import com.baidu.aenhancer.core.processor.impl.ShortCircuitProcessor;
 import com.baidu.aenhancer.core.processor.impl.SyncSplitProcessor;
 import com.baidu.aenhancer.core.processor.impl.SyncTimeoutProcessor;
 
@@ -22,6 +23,12 @@ public class ProcessorBuilder {
     private boolean timeout = false;
     private boolean parallel = false;
     private boolean fallback = false;
+    private boolean shortcircuit = false;
+
+    public ProcessorBuilder isShortcircuit(boolean shortcircuit) {
+        this.shortcircuit = shortcircuit;
+        return this;
+    }
 
     /**
      * @param fallback
@@ -99,11 +106,16 @@ public class ProcessorBuilder {
             }
         }
 
+        // shortcircuit
+        if (shortcircuit) {
+            processor = new ShortCircuitProcessor(processor);
+        }
+
         // cache
         if (cache) {
             processor = new CacheProcessor(processor);
         }
-        
+
         // fallback
         if (fallback) {
             processor = new FallBackProcessor(processor);

@@ -6,10 +6,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import com.baidu.aenhancer.core.processor.Hooker;
+import com.baidu.aenhancer.core.processor.DefaultHook;
+import com.baidu.aenhancer.core.processor.DefaultShortCircuit;
 import com.baidu.aenhancer.core.processor.ext.CacheProxy;
 import com.baidu.aenhancer.core.processor.ext.Fallbackable;
 import com.baidu.aenhancer.core.processor.ext.Hookable;
+import com.baidu.aenhancer.core.processor.ext.ShortCircuitable;
 import com.baidu.aenhancer.core.processor.ext.Splitable;
 
 @Target({ ElementType.METHOD })
@@ -59,10 +61,17 @@ public @interface Enhancer {
      * 
      * @return
      */
-    Class<? extends Hookable> hook() default Hooker.class;
+    Class<? extends Hookable> hook() default DefaultHook.class;
+
+    /**
+     * 默认全局设置
+     * 
+     * @return
+     */
+    Class<? extends ShortCircuitable> shortcircuit() default DefaultShortCircuit.class;
 
     // 代表null
-    interface NULL extends Splitable, CacheProxy, Fallbackable {
+    interface NULL extends Splitable, CacheProxy, Fallbackable, ShortCircuitable {
     }
 
 }

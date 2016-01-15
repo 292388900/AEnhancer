@@ -16,7 +16,7 @@ import com.baidu.aenhancer.core.processor.impl.EverythingStartFromHere;
 import com.baidu.aenhancer.exception.EnhancerCheckedException;
 
 /**
- * 定义Cached修饰的切点（point cut）和它的连接点（join point）处理
+ * 定义修饰的切点（point cut）和它的连接点（join point）处理
  * 
  * @author xushuda
  *
@@ -51,23 +51,20 @@ public class EnhancerAspect implements ApplicationContextAware {
             logger.info("ctx_id: {} finished, ret: \"{}\"", ctx.getCtxId(), ret);
             return ret;
         } catch (EnhancerCheckedException e) {
-            logger.error(
-                    " ctxId: {} ,method: \"{}\",revive error occors in cache aop ,call the org process, caused by :",
+            logger.error(" ctxId: {} ,method: \"{}\", fatal error occors in processing , caused by: ",
                     ctx != null ? ctx.getCtxId() : 0, jp.getSignature().toLongString(), e);
-            // return the original call
             return jp.proceed(jp.getArgs());
         } catch (RuntimeException rtExp) {
             // swallow the runtime exception
-            logger.error("ctx_id: {} , revive runtime exception occurs in cache aop , caused by :",
-                    ctx != null ? ctx.getCtxId() : 0, rtExp);
-            return jp.proceed(jp.getArgs());
+            logger.error("ctx_id: {} ,  exception occurs in cache aop , caused by: ", ctx != null ? ctx.getCtxId() : 0,
+                    rtExp);
+            throw rtExp;
         }
     }
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
-
     }
 
 }

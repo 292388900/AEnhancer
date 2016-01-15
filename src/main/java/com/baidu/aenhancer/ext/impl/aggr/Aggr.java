@@ -40,11 +40,11 @@ public @interface Aggr {
     boolean sequential() default false;
 
     /**
-     * 只有当批量请求有最大请求条数限制的时候才使用这个字段 <br>
+     * 将一个带有集合参数的请求拆分的时候必须指定每个集合的元素个数 <br>
      * 
-     * @return 批量查询的一次请求大小限制
+     * @return 
      */
-    int batchSize() default 0;
+    int aggrSize() default 0;
 
     /**
      * 从集合类的参数中获取 缓存的key <br>

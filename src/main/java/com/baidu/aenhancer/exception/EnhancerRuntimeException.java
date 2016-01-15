@@ -6,7 +6,7 @@ package com.baidu.aenhancer.exception;
  * @author xushuda
  *
  */
-public abstract class EnhancerRuntimeException extends RuntimeException {
+public class EnhancerRuntimeException extends RuntimeException {
 
     /**
      * default serialVersionUID
@@ -17,7 +17,7 @@ public abstract class EnhancerRuntimeException extends RuntimeException {
         super(message);
     }
 
-    public EnhancerRuntimeException(Exception e) {
+    public EnhancerRuntimeException(Throwable e) {
         super(e);
     }
 }

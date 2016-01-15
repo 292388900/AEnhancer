@@ -55,10 +55,10 @@ public final class AggrSpliter implements SplitProxy {
     @Override
     public void init(ProceedingJoinPoint jp, ApplicationContext context) throws CodingError {
         Aggr annotation = ((MethodSignature) jp.getSignature()).getMethod().getAnnotation(Aggr.class);
-        if (null == annotation || annotation.batchSize() < 0) {
+        if (null == annotation || annotation.aggrSize() < 0) {
             throw new CodingError("Aggr Spliter but no @Aggr annotation Or batchSize < 0");
         }
-        this.batchSize = annotation.batchSize();
+        this.batchSize = annotation.aggrSize();
         // TODO else skip
         signature = AggrSignatureParser.parseSignature(jp);
     }

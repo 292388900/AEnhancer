@@ -6,19 +6,22 @@ import java.util.Random;
 
 import org.apache.commons.lang.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.context.ApplicationContext;
 
-import com.baidu.aenhancer.core.processor.Processor;
 import com.baidu.aenhancer.core.processor.ExecutorFactory;
+import com.baidu.aenhancer.core.processor.Processor;
 import com.baidu.aenhancer.core.processor.ext.CacheProxy;
 import com.baidu.aenhancer.core.processor.ext.FallbackProxy;
 import com.baidu.aenhancer.core.processor.ext.Fallbackable;
 import com.baidu.aenhancer.core.processor.ext.HookProxy;
 import com.baidu.aenhancer.core.processor.ext.Hookable;
+import com.baidu.aenhancer.core.processor.ext.ShortCircuitable;
 import com.baidu.aenhancer.core.processor.ext.SplitProxy;
 import com.baidu.aenhancer.core.processor.ext.Splitable;
 import com.baidu.aenhancer.entry.Collapse;
 import com.baidu.aenhancer.entry.Enhancer;
+import com.baidu.aenhancer.entry.Enhancer.NULL;
 import com.baidu.aenhancer.entry.FallbackMock;
 import com.baidu.aenhancer.entry.Hook;
 import com.baidu.aenhancer.entry.Split;
@@ -44,6 +47,7 @@ public class AopContext implements ProcessContext {
     private SplitProxy spliter = null;
     private FallbackProxy fallback = null;
     private HookProxy hook = null;
+    private ShortCircuitable shortcircuit = null;
 
     public AopContext(Enhancer annotation, ProceedingJoinPoint jp, ApplicationContext context)
             throws InstantiationException, IllegalAccessException, CodingError {
@@ -86,6 +90,11 @@ public class AopContext implements ProcessContext {
         }
         hook.init(jp, context);
 
+        // shortcircuit
+        if (annotation.shortcircuit() != NULL.class) {
+            shortcircuit = annotation.shortcircuit().newInstance();
+            shortcircuit.init(jp, context);
+        }
     }
 
     private HookProxy getHookProxy(final Hookable userHook) {
@@ -110,7 +119,7 @@ public class AopContext implements ProcessContext {
                     public void beforeProcess(ProcessContext ctx, Processor currentProcess) {
 
                     }
-                    
+
                     @Override
                     public Object call(Object[] param) {
                         try {
@@ -324,5 +333,23 @@ public class AopContext implements ProcessContext {
     @Override
     public boolean hook() {
         return null != hook;
+    }
+
+    @Override
+    public Method getMothod() {
+        return ((MethodSignature) jp.getSignature()).getMethod();
+    }
+
+    @Override
+    public boolean shortcircuit() {
+        return shortcircuit != null;
+    }
+
+    @Override
+    public ShortCircuitable getShortCircuit() {
+        if (null == shortcircuit) {
+            throw new NullPointerException("shortcircuit is null");
+        }
+        return shortcircuit;
     }
 }
