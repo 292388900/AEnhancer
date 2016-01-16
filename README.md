@@ -1,8 +1,7 @@
 # AEnhancer
 
-`*Light Weight Method Enhancer Infrastructure for Application*
-
-`*Mainly for increasing developer productivity and application stability when using Java*
+*Light Weight Method Enhancer Infrastructure for Application*  
+*Mainly for increasing developer productivity and application stability when using Java*
 
 #### ABOVE ALL:
 透明接入现有代码，In Most Cases，无代码入侵
@@ -115,18 +114,16 @@
 配置文件参考applicationContext.xml
 
 # 帮助改进:
-``` 
-1、xml的配置方式
-2、executor，shortcircuit读取配置文件
-4、代理类的级别优先级控制
-5、与Spring Hibernate整合多线程测试
- ~~6、短路：流量控制，错误短路。~~ Done @1.16 by xusoda
- ~~7、所有自有实现都使用插件化~~ Done @1.15 by xusoda
-8、逻辑流图
-9、将所有对象改为抽象工厂创建，方便与Spring整合？
-10、使用xml配置切面，使得配置可以reload，或者说override
-11、使用静态织入的方式，不用对Spring依赖，只对Aspectj依赖
-12、短路局部控制。
-13、短路对模块的控制（比如cache模块实效）
-```
+1、xml的配置方式  
+2、executor，shortcircuit读取配置文件  
+4、代理类的级别优先级控制  
+5、与Spring Hibernate整合多线程测试  
+~~6、短路：流量控制，错误短路。~~ Done @1.16 by xusoda  
+~~7、所有自有实现都使用插件化~~ Done @1.15 by xusoda  
+8、逻辑流图  
+9、将所有对象改为抽象工厂创建，方便与Spring整合？  
+10、使用xml配置切面，使得配置可以reload，或者说override  
+11、使用静态织入的方式，不用对Spring依赖，只对Aspectj依赖  
+12、短路局部控制。  
+13、短路对模块的控制（比如cache模块实效）  
 
