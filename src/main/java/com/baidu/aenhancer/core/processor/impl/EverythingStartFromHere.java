@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import com.baidu.aenhancer.core.context.ProcessContext;
 import com.baidu.aenhancer.core.processor.Processor;
 import com.baidu.aenhancer.core.processor.ext.HookProxy;
+import com.baidu.aenhancer.exception.EnhancerRuntimeException;
 
 /**
  * 所有Processor的入口，但是它并不会引用别的Processor
@@ -31,6 +32,9 @@ public class EverythingStartFromHere extends Processor {
 
     @Override
     protected void preCheck(ProcessContext ctx, Object param) {
+        if (null != decoratee) {
+            throw new EnhancerRuntimeException("this processor only call hook, no decoratee should be present");
+        }
         logger.info("ctxId: {}, precheck, hook processor's hooker is: \"{}\"", ctx.getCtxId(), ctx.getHook());
     }
 

@@ -1,14 +1,16 @@
 package com.baidu.aenhancer.core.processor.impl;
 
-import java.lang.reflect.Method;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.baidu.aenhancer.core.context.ProcessContext;
 import com.baidu.aenhancer.core.processor.Processor;
-import com.baidu.aenhancer.core.processor.ShortCircuitTick;
+import com.baidu.aenhancer.core.processor.ext.ShortCircuitable;
 import com.baidu.aenhancer.exception.EnhancerRuntimeException;
 import com.baidu.aenhancer.exception.ShortCircuitExcption;
 
 public class ShortCircuitProcessor extends Processor {
+    private Logger logger = LoggerFactory.getLogger(ShortCircuitProcessor.class);
 
     public ShortCircuitProcessor(Processor decoratee) {
         super(decoratee);
@@ -16,34 +18,38 @@ public class ShortCircuitProcessor extends Processor {
 
     @Override
     protected Object process(ProcessContext ctx, Object param) throws Throwable {
-        ShortCircuitTick sct = ShortCircuitTick.getInstanc();
-        Method method = ctx.getMothod();
+        ShortCircuitable sct = ctx.getShortCircuit();
+        sct.beforeProcess(ctx, this);
         try {
-            if (!sct.shortcircuit(method)) {
+
+            if (!sct.shortcircuit()) {
                 Object ret = decoratee.doo(ctx, param);
-                sct.success(method);
+                sct.success();
                 return ret;
             }
         } catch (ShortCircuitExcption e) {
+            logger.info("ctxId {} ,ShortCircuitException occurs , type: {}", ctx.getCtxId(), e.getShortCircuitType());
             switch (e.getShortCircuitType()) {
                 case TASK_REJ:
-                    sct.reject(method);
+                    sct.reject();
                     break;
                 case TIMEOUT:
-                    sct.timeout(method);
+                    sct.timeout();
                     break;
                 case FAILURE:
-                    sct.error(method);
+                    sct.error();
                     break;
                 default:
-                    sct.error(method);
+                    sct.error();
             }
             throw new EnhancerRuntimeException(e.getCause());
         } catch (Throwable e) {
-            sct.error(method);
+            logger.info("ctxId {} ,error occurs,short circuit processor mark error() cause: ", ctx.getCtxId(), e);
+            sct.error();
             throw e;
         }
-        // 如果只是短路,直接抛出RunTime异常
+        logger.info("ctxId {} is shortcircuited ", ctx.getCtxId());
+        // 如果是短路状态，直接抛出运行时异常
         throw new EnhancerRuntimeException("ctxId: " + ctx.getCtxId() + ", the processor is short circuit");
     }
 

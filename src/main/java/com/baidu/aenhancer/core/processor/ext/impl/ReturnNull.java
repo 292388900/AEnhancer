@@ -1,4 +1,4 @@
-package com.baidu.aenhancer.ext.impl.aggr;
+package com.baidu.aenhancer.core.processor.ext.impl;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.springframework.context.ApplicationContext;
@@ -22,7 +22,10 @@ public class ReturnNull implements Fallbackable {
 
     @FallbackMock
     public Object fallback() {
-        return null;
+        // Class<?> x = Void.class;
+        // Class<?> y = void.class;
+        // Integer.TYPE a ;
+        return null; // TODO void?
     }
 
 }

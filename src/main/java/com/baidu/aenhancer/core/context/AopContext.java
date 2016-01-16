@@ -6,10 +6,8 @@ import java.util.Random;
 
 import org.apache.commons.lang.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.context.ApplicationContext;
 
-import com.baidu.aenhancer.core.processor.ExecutorFactory;
 import com.baidu.aenhancer.core.processor.Processor;
 import com.baidu.aenhancer.core.processor.ext.CacheProxy;
 import com.baidu.aenhancer.core.processor.ext.FallbackProxy;
@@ -19,6 +17,7 @@ import com.baidu.aenhancer.core.processor.ext.Hookable;
 import com.baidu.aenhancer.core.processor.ext.ShortCircuitable;
 import com.baidu.aenhancer.core.processor.ext.SplitProxy;
 import com.baidu.aenhancer.core.processor.ext.Splitable;
+import com.baidu.aenhancer.core.processor.ext.impl.ExecutorFactory;
 import com.baidu.aenhancer.entry.Collapse;
 import com.baidu.aenhancer.entry.Enhancer;
 import com.baidu.aenhancer.entry.Enhancer.NULL;
@@ -333,11 +332,6 @@ public class AopContext implements ProcessContext {
     @Override
     public boolean hook() {
         return null != hook;
-    }
-
-    @Override
-    public Method getMothod() {
-        return ((MethodSignature) jp.getSignature()).getMethod();
     }
 
     @Override

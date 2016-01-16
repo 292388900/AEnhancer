@@ -12,8 +12,8 @@ import org.slf4j.LoggerFactory;
 import com.baidu.aenhancer.core.context.ProcessContext;
 import com.baidu.aenhancer.core.context.ShortCircuitType;
 import com.baidu.aenhancer.core.processor.Processor;
-import com.baidu.aenhancer.core.processor.ExecutorFactory;
 import com.baidu.aenhancer.core.processor.ext.SplitProxy;
+import com.baidu.aenhancer.core.processor.ext.impl.ExecutorFactory;
 import com.baidu.aenhancer.exception.ShortCircuitExcption;
 
 /**

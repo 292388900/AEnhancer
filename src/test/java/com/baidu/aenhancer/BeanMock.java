@@ -9,11 +9,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.stereotype.Service;
 
+import com.baidu.aenhancer.core.processor.ext.impl.ReturnNull;
 import com.baidu.aenhancer.entry.Enhancer;
 import com.baidu.aenhancer.ext.impl.aggr.Aggr;
 import com.baidu.aenhancer.ext.impl.aggr.AggrCacher;
 import com.baidu.aenhancer.ext.impl.aggr.AggrSpliter;
-import com.baidu.aenhancer.ext.impl.aggr.ReturnNull;
 
 @Service
 public class BeanMock {
@@ -45,6 +45,12 @@ public class BeanMock {
 
     @Enhancer(fallback = ReturnNull.class)
     public int testFallback() {
+        try {
+            Thread.sleep(15000);
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
         throw new RuntimeException();
     }
 

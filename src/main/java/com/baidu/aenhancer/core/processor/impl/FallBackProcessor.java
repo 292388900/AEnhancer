@@ -17,10 +17,11 @@ public class FallBackProcessor extends Processor {
     @Override
     protected Object process(ProcessContext ctx, Object param) throws Throwable {
         FallbackProxy proxy = ctx.getFallBack();
+        proxy.beforeProcess(ctx, this);
         try {
             return decoratee.doo(ctx, param);
         } catch (Throwable th) {
-            logger.info("error occurs, fall back, cause {}", th);
+            logger.info("error occurs, fall back, cause: ", th);
             return proxy.fallback((Object[]) param);
         }
     }

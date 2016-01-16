@@ -1,5 +1,6 @@
-package com.baidu.aenhancer.core.processor;
+package com.baidu.aenhancer.core.processor.ext.impl;
 
+import com.baidu.aenhancer.core.processor.Processor;
 import com.baidu.aenhancer.core.processor.impl.AsyncSplitNTimeoutProcessor;
 import com.baidu.aenhancer.core.processor.impl.CacheProcessor;
 import com.baidu.aenhancer.core.processor.impl.FallBackProcessor;

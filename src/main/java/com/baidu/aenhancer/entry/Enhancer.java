@@ -6,13 +6,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import com.baidu.aenhancer.core.processor.DefaultHook;
-import com.baidu.aenhancer.core.processor.DefaultShortCircuit;
 import com.baidu.aenhancer.core.processor.ext.CacheProxy;
 import com.baidu.aenhancer.core.processor.ext.Fallbackable;
 import com.baidu.aenhancer.core.processor.ext.Hookable;
 import com.baidu.aenhancer.core.processor.ext.ShortCircuitable;
 import com.baidu.aenhancer.core.processor.ext.Splitable;
+import com.baidu.aenhancer.core.processor.ext.impl.DefaultHook;
+import com.baidu.aenhancer.core.processor.ext.impl.DefaultShortCircuit;
 
 @Target({ ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)

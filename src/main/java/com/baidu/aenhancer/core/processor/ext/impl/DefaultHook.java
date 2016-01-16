@@ -1,9 +1,10 @@
-package com.baidu.aenhancer.core.processor;
+package com.baidu.aenhancer.core.processor.ext.impl;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.springframework.context.ApplicationContext;
 
 import com.baidu.aenhancer.core.context.ProcessContext;
+import com.baidu.aenhancer.core.processor.Processor;
 import com.baidu.aenhancer.core.processor.ext.HookProxy;
 import com.baidu.aenhancer.exception.CodingError;
 
@@ -16,9 +17,11 @@ import com.baidu.aenhancer.exception.CodingError;
 public final class DefaultHook implements HookProxy {
     // ctx
     private ProcessContext ctx;
+    private ApplicationContext context;
 
     @Override
     public void init(ProceedingJoinPoint jp, ApplicationContext context) throws CodingError {
+        this.context = context;
     }
 
     @Override
@@ -36,9 +39,14 @@ public final class DefaultHook implements HookProxy {
     @Override
     public Object call(Object[] param) throws Throwable {
         // 设置builder参数
-        ProcessorBuilder builder =
-                new ProcessorBuilder().isParallel(ctx.parallel()).isCache(ctx.cache()).isRetry(ctx.getRetry() > 0)
-                        .isTimeout(ctx.getTimeout() > 0).isFallback(ctx.fallback()).isSplit(ctx.split());
+        ProcessorBuilder builder = new ProcessorBuilder()//
+                .isParallel(ctx.parallel())//
+                .isCache(ctx.cache())//
+                .isRetry(ctx.getRetry() > 0)//
+                .isTimeout(ctx.getTimeout() > 0)//
+                .isFallback(ctx.fallback())//
+                .isSplit(ctx.split())//
+                .isShortcircuit(ctx.shortcircuit());
         // build 处理器对象
         Processor processor = builder.build();
         // 处理

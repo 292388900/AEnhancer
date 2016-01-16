@@ -1,5 +1,7 @@
 # AEnhancer
+
 `*Light Weight Method Enhancer Infrastructure for Application*
+
 `*Mainly for increasing developer productivity and application stability when using Java*
 
 #### ABOVE ALL:
@@ -105,7 +107,7 @@
 	框架定义了2种异常。1、受检框架异常。2、运行期框架异常。
 	对于1）
 		CodingError一般是注解等写的都问题，需要根据提示在开发期做出修改，会在最上层捕获。
-		ShortCricuit异常一般会在超时或者失败的时候抛出,如果有ShortCircuitProcessor支持，则会记录短路信息，并将cause继续向上抛出。否则，在最上层也会将cause抛出，cause会包装在运行时框架异常中。
+		ShortCircuit异常一般会在超时或者失败的时候抛出,如果有ShortCircuitProcessor支持，则会记录短路信息，并将cause继续向上抛出。否则，在最上层也会将cause抛出，cause会包装在运行时框架异常中。
 	对于2）
 		运行期异常会被直接抛出
 		
@@ -115,12 +117,16 @@
 # 帮助改进:
 ``` 
 1、xml的配置方式
-2、对executor的等待队列的配置
-3、executor的各个参数的配置
+2、executor，shortcircuit读取配置文件
 4、代理类的级别优先级控制
 5、与Spring Hibernate整合多线程测试
-6、短路：流量控制，错误短路。全局的手动控制。
-~~7、所有自有实现都使用插件化~~ Done @1.15 by xushuda
+~~6、短路：流量控制，错误短路。~~ Done @1.16 by xusoda
+~~7、所有自有实现都使用插件化~~ Done @1.15 by xusoda
 8、逻辑流图
+9、将所有对象改为抽象工厂创建，方便与Spring整合？
+10、使用xml配置切面，使得配置可以reload，或者说override
+11、使用静态织入的方式，不用对Spring依赖，只对Aspectj依赖
+12、短路局部控制。
+13、短路对模块的控制（比如cache模块实效）
 ```
 

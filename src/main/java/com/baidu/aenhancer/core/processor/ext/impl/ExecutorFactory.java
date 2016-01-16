@@ -1,4 +1,4 @@
-package com.baidu.aenhancer.core.processor;
+package com.baidu.aenhancer.core.processor.ext.impl;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.baidu.aenhancer.core.context.ProcessContext;
+import com.baidu.aenhancer.core.processor.Processor;
 
 public class ExecutorFactory {
     public static final String SHARED = "SHARED_POOL";
