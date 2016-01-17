@@ -10,15 +10,12 @@ public interface ProcessContext {
 
     public abstract long getCtxId();
 
-    // 原函数相关－－－－－－－－－－－－－－－－
     public abstract Object invokeOrignialMethod(Object[] args) throws Throwable;
 
     public abstract Object[] getArgs();
 
-    // 重试相关－－－－－－－－－－－－－
     public abstract int getRetry();
 
-    // 线程调度相关
     public abstract int getTimeout();
 
     public boolean split();

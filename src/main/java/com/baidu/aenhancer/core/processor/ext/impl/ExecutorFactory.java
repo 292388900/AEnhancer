@@ -42,12 +42,10 @@ public class ExecutorFactory {
     }
 
     // TODO add configuration for corePoolSize and so on
-    private ExecutorService newExecSrv() {
-        int corePoolSize = 5;
-        int maximumPoolSize = 10;
-        int keepAliveTime = 30;
+    private ExecutorService newExecSrv(int corePoolSize, int maximumPoolSize, int keepAliveTime, int queueSize) {
         TimeUnit unit = TimeUnit.SECONDS;
-        BlockingQueue<Runnable> workQueue = new ArrayBlockingQueue<Runnable>(5);
+        // TODO ??
+        BlockingQueue<Runnable> workQueue = new ArrayBlockingQueue<Runnable>(queueSize);
         // 设置为DaemonThread
         ThreadFactory threadFactory = new ThreadFactory() {
             @Override
@@ -73,7 +71,7 @@ public class ExecutorFactory {
         if (null == execSrv) {
             synchronized (this) {
                 if (null == execSrv) {
-                    execSrv = newExecSrv();
+                    execSrv = newExecSrv(5, 10, 30, 25);
                     executorPool.put(group, execSrv);
                     logger.info("executor is inited for group: {}", group);
                 }
@@ -122,8 +120,8 @@ public class ExecutorFactory {
      * @return
      * @throws InterruptedException
      */
-    public List<Future<Object>> submitProcess(String group, final Processor processor,
-            final ProcessContext ctx, final List<Object> params, long timeout) throws InterruptedException {
+    public List<Future<Object>> submitProcess(String group, final Processor processor, final ProcessContext ctx,
+            final List<Object> params, long timeout) throws InterruptedException {
         ExecutorService execSrv = getByGroup(group);
 
         List<Callable<Object>> tasks = new ArrayList<Callable<Object>>();
@@ -157,8 +155,8 @@ public class ExecutorFactory {
      * @return
      * @throws InterruptedException
      */
-    public List<Future<Object>> submitProcess(String group, final Processor processor,
-            final ProcessContext ctx, final List<Object> params) throws InterruptedException {
+    public List<Future<Object>> submitProcess(String group, final Processor processor, final ProcessContext ctx,
+            final List<Object> params) throws InterruptedException {
         ExecutorService execSrv = getByGroup(group);
 
         List<Callable<Object>> tasks = new ArrayList<Callable<Object>>();

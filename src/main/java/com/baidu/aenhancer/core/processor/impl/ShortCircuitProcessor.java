@@ -21,7 +21,7 @@ public class ShortCircuitProcessor extends Processor {
         ShortCircuitable sct = ctx.getShortCircuit();
         sct.beforeProcess(ctx, this);
         try {
-
+            // 不在此短路的话则调用
             if (!sct.shortcircuit()) {
                 Object ret = decoratee.doo(ctx, param);
                 sct.success();
@@ -45,7 +45,7 @@ public class ShortCircuitProcessor extends Processor {
             throw new EnhancerRuntimeException(e.getCause());
         } catch (Throwable e) {
             logger.info("ctxId {} ,error occurs,short circuit processor mark error() cause: ", ctx.getCtxId(), e);
-            sct.error();
+            sct.error(); // mark error
             throw e;
         }
         logger.info("ctxId {} is shortcircuited ", ctx.getCtxId());

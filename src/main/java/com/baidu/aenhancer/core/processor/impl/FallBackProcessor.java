@@ -21,7 +21,7 @@ public class FallBackProcessor extends Processor {
         try {
             return decoratee.doo(ctx, param);
         } catch (Throwable th) {
-            logger.info("error occurs, fall back, cause: ", th);
+            logger.info("ctxId: {} error occurs, fall back, cause: ", ctx.getCtxId(), th);
             return proxy.fallback((Object[]) param);
         }
     }

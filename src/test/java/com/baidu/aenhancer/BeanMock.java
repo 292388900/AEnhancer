@@ -44,9 +44,9 @@ public class BeanMock {
     }
 
     @Enhancer(fallback = ReturnNull.class)
-    public int testFallback() {
+    public void testFallback() {
         try {
-            Thread.sleep(15000);
+            Thread.sleep(5000);
         } catch (InterruptedException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

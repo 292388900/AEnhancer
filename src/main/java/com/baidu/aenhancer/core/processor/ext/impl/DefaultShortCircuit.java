@@ -27,7 +27,7 @@ public class DefaultShortCircuit implements ShortCircuitable {
     public void init(ProceedingJoinPoint jp, ApplicationContext context) throws CodingError {
         method = ((MethodSignature) jp.getSignature()).getMethod();
         sct = ShortCircuitTick.getInstance();
-        scsm = ShortCircuitStateMachine.getInstance();
+        scsm = ShortCircuitStateMachineFactory.getInstance().getStateMachine(method, sct.getTick());
     }
 
     @Override
@@ -37,33 +37,33 @@ public class DefaultShortCircuit implements ShortCircuitable {
 
     @Override
     public boolean shortcircuit() {
-        return scsm.shortcircuit(method, sct.getSuccesss(method, calSize), sct.getTimeouts(method, calSize),
+        return scsm.shortcircuit(sct.getSuccesss(method, calSize), sct.getTimeouts(method, calSize),
                 sct.getErrors(method, calSize), sct.getRejections(method, calSize), sct.getTick());
     }
 
     @Override
     public void reject() {
         sct.reject(method);
-        scsm.notify(method, false, sct.getTick());
+        scsm.notify(false, sct.getTick());
     }
 
     @Override
     public void timeout() {
         sct.timeout(method);
-        scsm.notify(method, false, sct.getTick());
+        scsm.notify(false, sct.getTick());
 
     }
 
     @Override
     public void error() {
         sct.error(method);
-        scsm.notify(method, false, sct.getTick());
+        scsm.notify(false, sct.getTick());
     }
 
     @Override
     public void success() {
         sct.success(method);
-        scsm.notify(method, true, sct.getTick());
+        scsm.notify(true, sct.getTick());
     }
 
 }

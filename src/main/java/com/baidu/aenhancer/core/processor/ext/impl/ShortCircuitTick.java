@@ -1,6 +1,8 @@
 package com.baidu.aenhancer.core.processor.ext.impl;
 
 import java.lang.reflect.Method;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
@@ -10,7 +12,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * 包含一个Timer线程，TickTock
+ * 包含一个Timer线程，TickTock,
+ * 
+ * 持有所有方法的滑动窗口对象
  * 
  * @author xushuda
  *
@@ -24,7 +28,7 @@ public class ShortCircuitTick {
 
     private final int windowSize; // 时间窗口的大小
 
-    private final ConcurrentHashMap<Method, ShortCircuitSlidingWindow> slideMaps;
+    private final ConcurrentHashMap<Method, SlidingWindow<ShortCircuitFigure>> slideMaps;
 
     private static volatile ShortCircuitTick instance;
 
@@ -35,11 +39,11 @@ public class ShortCircuitTick {
         if (null == instance) {
             synchronized (ShortCircuitTick.class) {
                 if (null == instance) {
+                    // 5000毫秒，最大20个窗口
                     instance = new ShortCircuitTick(5000, 20);
                 }
             }
         }
-        // TODO 读配置xml或者文件
         return instance;
     }
 
@@ -52,7 +56,7 @@ public class ShortCircuitTick {
      * @param interval 每个时间间隔的大小
      */
     private ShortCircuitTick(final long interval, int windowSize) {
-        slideMaps = new ConcurrentHashMap<Method, ShortCircuitSlidingWindow>();
+        slideMaps = new ConcurrentHashMap<Method, SlidingWindow<ShortCircuitFigure>>();
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
@@ -70,140 +74,145 @@ public class ShortCircuitTick {
      * @return
      */
     public int getSuccesss(Method method, int calSize) {
-        ShortCircuitSlidingWindow window = getSlideWindow(method);
-        return window.getSuccesss(tick, calSize);
+        SlidingWindow<ShortCircuitFigure> window = getSlideWindow(method);
+        return calSuccess(window.get(tick, calSize));
     }
 
     public int getTimeouts(Method method, int calSize) {
-        ShortCircuitSlidingWindow window = getSlideWindow(method);
-        return window.getTimeouts(tick, calSize);
+        SlidingWindow<ShortCircuitFigure> window = getSlideWindow(method);
+        return calTimeout(window.get(tick, calSize));
     }
 
     public int getRejections(Method method, int calSize) {
-        ShortCircuitSlidingWindow window = getSlideWindow(method);
-        return window.getRejctions(tick, calSize);
+        SlidingWindow<ShortCircuitFigure> window = getSlideWindow(method);
+        return calReject(window.get(tick, calSize));
     }
 
     public int getErrors(Method method, int calSize) {
-        ShortCircuitSlidingWindow window = getSlideWindow(method);
-        return window.getErrors(tick, calSize);
+        SlidingWindow<ShortCircuitFigure> window = getSlideWindow(method);
+        return calError(window.get(tick, calSize));
     }
 
     public int success(Method method) {
-        ShortCircuitSlidingWindow window = getSlideWindow(method);
-        return window.success(tick);
+        SlidingWindow<ShortCircuitFigure> window = getSlideWindow(method);
+        return window.get(tick).successs.addAndGet(1);
     }
 
     public int reject(Method method) {
-        ShortCircuitSlidingWindow window = getSlideWindow(method);
-        return window.reject(tick);
+        SlidingWindow<ShortCircuitFigure> window = getSlideWindow(method);
+        return window.get(tick).rejections.addAndGet(1);
     }
 
     public int error(Method method) {
-        ShortCircuitSlidingWindow window = getSlideWindow(method);
-        return window.error(tick);
+        SlidingWindow<ShortCircuitFigure> window = getSlideWindow(method);
+        return window.get(tick).errors.addAndGet(1);
     }
 
     public int timeout(Method method) {
-        ShortCircuitSlidingWindow window = getSlideWindow(method);
-        return window.timeout(tick);
+        SlidingWindow<ShortCircuitFigure> window = getSlideWindow(method);
+        return window.get(tick).timeouts.addAndGet(1);
     }
 
-    private ShortCircuitSlidingWindow getSlideWindow(Method method) {
+    private int calSuccess(List<ShortCircuitFigure> figures) {
+        int success = 0;
+        for (ShortCircuitFigure figure : figures) {
+            success += figure.successs.get();
+        }
+        return success;
+    }
+
+    private int calError(List<ShortCircuitFigure> figures) {
+        int fail = 0;
+        for (ShortCircuitFigure figure : figures) {
+            fail += figure.errors.get();
+        }
+        return fail;
+    }
+
+    private int calTimeout(List<ShortCircuitFigure> figures) {
+        int timeout = 0;
+        for (ShortCircuitFigure figure : figures) {
+            timeout += figure.timeouts.get();
+        }
+        return timeout;
+    }
+
+    private int calReject(List<ShortCircuitFigure> figures) {
+        int rej = 0;
+        for (ShortCircuitFigure figure : figures) {
+            rej += figure.rejections.get();
+        }
+        return rej;
+    }
+
+    private SlidingWindow<ShortCircuitFigure> getSlideWindow(Method method) {
         if (null == method) {
             throw new NullPointerException("method is null");
         }
-        ShortCircuitSlidingWindow window = slideMaps.get(method);
+        SlidingWindow<ShortCircuitFigure> window = slideMaps.get(method);
         if (null == window) {
             synchronized (method) {
+                window = slideMaps.get(method);
                 if (null == window) {
-                    window = new ShortCircuitSlidingWindow(windowSize);
+                    ShortCircuitFigure[] scf = new ShortCircuitFigure[windowSize];
+                    for (int i = 0; i < windowSize; i++) {
+                        scf[i] = new ShortCircuitFigure();
+                    }
+                    window = new SlidingWindow<ShortCircuitFigure>(scf);
                 }
             }
         }
         return window;
     }
 
-    class ShortCircuitSlidingWindow {
+    /**
+     * 窗口内每个slot中存的对象
+     * 
+     * @author xushuda
+     *
+     */
+    class ShortCircuitFigure {
+        AtomicInteger successs = new AtomicInteger(0);
+        AtomicInteger errors = new AtomicInteger(0);
+        AtomicInteger timeouts = new AtomicInteger(0);
+        AtomicInteger rejections = new AtomicInteger(0);
+    }
 
-        class ShortCircuitFigure {
-            AtomicInteger successs = new AtomicInteger(0);
-            AtomicInteger errors = new AtomicInteger(0);
-            AtomicInteger timeouts = new AtomicInteger(0);
-            AtomicInteger rejections = new AtomicInteger(0);
+    /**
+     * 
+     * @author xushuda
+     *
+     */
+    class SlidingWindow<T> {
+
+        /**
+         * 滑动窗口
+         */
+        private final T[] slots;
+
+        /**
+         * 
+         * @param windowSize 窗口的大小
+         */
+        public SlidingWindow(T[] arrays) {
+            slots = arrays;
         }
 
-        private final ShortCircuitFigure[] slides;
-
-        public ShortCircuitSlidingWindow(int windowSize) {
-            slides = new ShortCircuitFigure[windowSize];
-            for (int i = 0; i < windowSize; i++) {
-                slides[i] = new ShortCircuitFigure();
-            }
+        public T get(int id) {
+            return slots[id & 0x7FFFFFF % slots.length];
         }
 
-        public int getSuccesss(int id) {
-            return slides[Math.abs(id) % slides.length].successs.get();
-        }
-
-        public int getErrors(int id) {
-            return slides[Math.abs(id) % slides.length].errors.get();
-        }
-
-        public int getTimeouts(int id) {
-            return slides[Math.abs(id) % slides.length].timeouts.get();
-        }
-
-        public int getRejctions(int id) {
-            return slides[Math.abs(id) % slides.length].rejections.get();
-        }
-
-        public int success(int id) {
-            return slides[Math.abs(id) % slides.length].successs.addAndGet(1);
-        }
-
-        public int error(int id) {
-            return slides[Math.abs(id) % slides.length].errors.addAndGet(1);
-        }
-
-        public int timeout(int id) {
-            return slides[Math.abs(id) % slides.length].timeouts.addAndGet(1);
-        }
-
-        public int reject(int id) {
-            return slides[Math.abs(id) % slides.length].rejections.addAndGet(1);
-        }
-
-        public int getSuccesss(int id, int size) {
-            int ret = 0;
+        public List<T> get(int id, int size) {
+            List<T> ret = new LinkedList<T>();
             for (int i = 0; i < size; i++) {
-                ret += slides[Math.abs((id - i)) % slides.length].successs.get();
+                ret.add(get(id - i));
             }
             return ret;
         }
 
-        public int getErrors(int id, int size) {
-            int ret = 0;
-            for (int i = 0; i < size; i++) {
-                ret += slides[Math.abs((id - i)) % slides.length].errors.get();
-            }
-            return ret;
+        public void set(int id, T data) {
+            slots[id % slots.length] = data;
         }
 
-        public int getTimeouts(int id, int size) {
-            int ret = 0;
-            for (int i = 0; i < size; i++) {
-                ret += slides[Math.abs((id - i)) % slides.length].timeouts.get();
-            }
-            return ret;
-        }
-
-        public int getRejctions(int id, int size) {
-            int ret = 0;
-            for (int i = 0; i < size; i++) {
-                ret += slides[Math.abs((id - i)) % slides.length].rejections.get();
-            }
-            return ret;
-        }
     }
 }
