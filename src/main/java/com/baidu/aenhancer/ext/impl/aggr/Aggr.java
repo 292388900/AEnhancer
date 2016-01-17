@@ -95,10 +95,4 @@ public @interface Aggr {
      */
     int[] ignList() default {};
 
-    /**
-     * driver
-     * 
-     * @return
-     */
-    String driver() default "";
 }

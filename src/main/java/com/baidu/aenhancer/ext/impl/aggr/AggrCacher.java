@@ -63,7 +63,13 @@ public class AggrCacher implements CacheProxy {
     @Override
     public void init(ProceedingJoinPoint jp, ApplicationContext context) throws CodingError {
         signature = AggrSignatureParser.parseSignature(jp);
-        aggr = ((MethodSignature) jp.getSignature()).getMethod().getAnnotation(Aggr.class);
+        try {
+            aggr =
+                    (jp.getTarget().getClass().getDeclaredMethod(jp.getSignature().getName(),
+                            ((MethodSignature) jp.getSignature()).getParameterTypes())).getAnnotation(Aggr.class);
+        } catch (Exception e) {
+            throw new CodingError("error get signature, cause :", e);
+        }
         if (null == aggr) {
             throw new CodingError("AggrCacher but ,no @Aggr exists");
         }
@@ -72,13 +78,9 @@ public class AggrCacher implements CacheProxy {
         String etResult = aggr.result();
         if (!StringUtils.isEmpty(etParam)) {
             extractFromParam = parser.parseExpression(etParam);
-        } else {
-            extractFromParam = null;
         }
         if (!StringUtils.isEmpty(etResult)) {
             extractFromResult = parser.parseExpression(etResult);
-        } else {
-            extractFromResult = null;
         }
         driver = context.getBean(aggr.cache(), CacheDriver.class);
         // TODO 验证有效性
@@ -304,9 +306,8 @@ public class AggrCacher implements CacheProxy {
      * @throws IllegalParamException
      */
     public Object extResult(Object resultElement) {
-        // assertBatch();
-        if (!aggr.sequential() && null == extractFromResult) {
-            throw new IllegalParamException("error ext from result, must not null if not sequential");
+        if (null == extractFromResult) {
+            throw new IllegalParamException("error ext from result, spEl is null");
         }
         return extractFromResult.getValue(resultElement); // TODO context??
     }

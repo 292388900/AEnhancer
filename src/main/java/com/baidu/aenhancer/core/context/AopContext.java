@@ -223,7 +223,7 @@ public class AopContext implements ProcessContext {
                     @Override
                     public Object fallback(Object[] param) {
                         try {
-                            return method.invoke(userFallback, param);
+                            return method.invoke(userFallback, (Object) param);
                         } catch (Exception e) {
                             throw new UnexpectedStateException(e);
                         }

@@ -16,8 +16,11 @@
     * 6、服务降级  
     * 7、异常模块（比如依赖的远程服务失效）的短路控制  
     * 8、流量限制（方法调用次数控制）  
-    * 9、插件式扩展（用户可自定义特性）  
-	PS：所有支持的特性都是“正交的”（正交性：互不干扰，任意组合）  
+    * 9、插件式扩展（用户可自定义特性） 
+      
+	PS：1、上述所有支持的特性都是“正交的”（正交性：互不影响，任意组合） 
+		2、在使用并行支持的时候，对于任何线程可见的变量需要多加小心。 
+		
 
 
 ## 示例：
@@ -94,14 +97,16 @@
 	
    *3、Fork此项目，自己修改源代码各个实现吧！*
    
-   *4、默认实现：*  
+   *4、默认实现（extension）：*  
 		AggrSpliter：自动拆分集合参数，只需指定每个集合大小，以便对批量接口进行并行化支持  
 		AggrCacher：  
 			1）支持类似Spring @Cacheable的注解方式，注解式TTL  
     		2）支持配置不同存储介质，已提供对RedisHa的适配实现  
     		3）支持spEL自定义缓存key，缓存支持部分命中  
 			4）可提供手动刷新缓存等方法的支持    
-
+	
+	PS： Processor和extension都是stateful的，可以在一次aop处理流程中保持自己的object member。
+	
 ## 异常处理：
 	框架定义了2种异常。1、受检框架异常。2、运行期框架异常。
 	对于1）
@@ -111,20 +116,21 @@
 		运行期异常会被直接抛出
 		
 # 注：
-配置文件参考applicationContext.xml
+配置文件参考applicationContext.xml  
+用户自己run test case 时需要把RedisHa这个类去掉。  
 
-# 帮助改进:
+# 帮助改进特性:
 1、xml的配置方式  
-2、executorFactory，shortCircuitTick, shortCircuitStateMachineFactory读取配置文件
+2、executorFactory，shortCircuitTick，shortCircuitStateMachineFactory读取配置文件
 4、代理类的级别优先级控制  
-5、与Spring Hibernate整合多线程测试  
+~~5、与Spring Hibernate整合多线程测试~~ Done @1.17 by xusoda  
 ~~6、短路：流量控制，错误短路。~~ Done @1.16 by xusoda  
 ~~7、所有自有实现都使用插件化~~ Done @1.15 by xusoda  
 8、逻辑流图  
-9、将所有对象的new改为抽象工厂创建，方便与Spring整合？  
-10、使用xml配置切面，使得配置可以reload，或者说override  
-11、使用静态织入的方式，不用对Spring依赖，只对Aspectj依赖  
-12、短路局部控制。  
-13、短路对模块的控制（比如cache模块实效）  
+9、将所有对象的new改为抽象工厂创建，与Spring整合与依赖分离  
+10、使得配置可以reload，或者说override  
+~~11、使用静态织入的方式，不用对Spring依赖，只对Aspectj依赖~~ Pending @1.17 by xusoda  
+12、短路分method控制，线程池分group控制 
+~~13、框架模块失效控制?~~ Discard（由实现类容错） @1.17 by xusoda   
 14、使用信号量模拟多个线程池隔离  
 15、Reload配置  

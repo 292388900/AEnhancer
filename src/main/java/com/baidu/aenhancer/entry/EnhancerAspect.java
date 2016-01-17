@@ -12,7 +12,7 @@ import org.springframework.context.ApplicationContextAware;
 import com.baidu.aenhancer.core.context.AopContext;
 import com.baidu.aenhancer.core.context.ProcessContext;
 import com.baidu.aenhancer.core.processor.Processor;
-import com.baidu.aenhancer.core.processor.impl.EverythingStartFromHere;
+import com.baidu.aenhancer.core.processor.impl.InceptProcessor;
 import com.baidu.aenhancer.exception.EnhancerCheckedException;
 
 /**
@@ -44,7 +44,7 @@ public class EnhancerAspect implements ApplicationContextAware {
         // 真正的数据处理阶段
         try {
             // 这个起始Processor其实不引用别的Processor，仅仅调用了上下文中的hook
-            Processor initd = new EverythingStartFromHere(null);
+            Processor initd = new InceptProcessor(null);
             ctx = new AopContext(scheduled, jp, applicationContext);
             logger.info("ctx_id: {} start : \"{}\"", ctx.getCtxId(), jp.getSignature().toLongString());
             Object ret = initd.doo(ctx, ctx.getArgs());

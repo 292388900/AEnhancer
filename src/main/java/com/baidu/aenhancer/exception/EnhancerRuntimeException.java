@@ -20,4 +20,8 @@ public class EnhancerRuntimeException extends RuntimeException {
     public EnhancerRuntimeException(Throwable e) {
         super(e);
     }
+
+    public EnhancerRuntimeException(String message, Throwable e) {
+        super(message, e);
+    }
 }

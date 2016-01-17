@@ -25,6 +25,7 @@ public class DefaultShortCircuit implements ShortCircuitable {
 
     @Override
     public void init(ProceedingJoinPoint jp, ApplicationContext context) throws CodingError {
+        // 这个signature是父类的signature
         method = ((MethodSignature) jp.getSignature()).getMethod();
         sct = ShortCircuitTick.getInstance();
         scsm = ShortCircuitStateMachineFactory.getInstance().getStateMachine(method, sct.getTick());

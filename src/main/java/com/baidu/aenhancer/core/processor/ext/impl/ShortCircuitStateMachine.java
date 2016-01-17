@@ -103,8 +103,10 @@ public class ShortCircuitStateMachine {
                         && (double) success / (timeout + error + rej + success) < minSuccessPerentage) {
                     // 修改状态
                     if (statusRef.compareAndSet(ts, new TimestampdStatus(tick, CircuitStatus.SHORT_CIRCUIT))) {
-                        logger.info("success percentage is too low at: \"{}\" , cause short circuit", (double) success
-                                / (timeout + error + rej + success));
+                        logger.info(
+                                "method : \".{}({})\" success percentage is too low at: \"{}\" , cause short circuit",
+                                method.getName(), method.getParameterTypes(), (double) success
+                                        / (timeout + error + rej + success));
                     }
                     shortcircuit = true;
                 }

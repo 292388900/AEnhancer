@@ -21,7 +21,7 @@ public class ReturnNull implements Fallbackable {
     }
 
     @FallbackMock
-    public Object fallback() {
+    public Object fallback(Object param) {
         // Class<?> x = Void.class;
         // Class<?> y = void.class;
         // Integer.TYPE a ;

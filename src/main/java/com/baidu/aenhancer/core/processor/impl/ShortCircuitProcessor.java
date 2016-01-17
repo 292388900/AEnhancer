@@ -42,7 +42,7 @@ public class ShortCircuitProcessor extends Processor {
                 default:
                     sct.error();
             }
-            throw new EnhancerRuntimeException(e.getCause());
+            throw new EnhancerRuntimeException(e.getMessage(), e.getCause());
         } catch (Throwable e) {
             logger.info("ctxId {} ,error occurs,short circuit processor mark error() cause: ", ctx.getCtxId(), e);
             sct.error(); // mark error

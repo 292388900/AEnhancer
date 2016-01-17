@@ -32,15 +32,9 @@ public class BeanMock {
         return ret;
     }
 
-    boolean throwEx = true;
-
     @Enhancer(retry = 2, fallback = ReturnNull.class)
     public Integer get(Integer x) {
-        if (throwEx) {
-            throwEx = false;
-            throw new RuntimeException("error");
-        }
-        return x;
+        throw new RuntimeException("error");
     }
 
     @Enhancer(fallback = ReturnNull.class)
@@ -71,14 +65,14 @@ public class BeanMock {
         return "OK";
     }
 
-    @Aggr(sequential = true, aggrSize = 1)
+    @Aggr(sequential = true, aggrSize = 1, cache = "NopDriver")
     @Enhancer( //
-            timeout = 100, // 超时时间
-            cacher = AggrCacher.class, // 缓存策略：按集合对象中的元素缓存
-            spliter = AggrSpliter.class, // 拆分成多次调用的策略：反集合元素个数拆分
-            parallel = true, // 可并行
-            group = "ServiceGroupA", // 所属的组
-            fallback=ReturnNull.class // 降级策略
+    timeout = 100, // 超时时间
+    cacher = AggrCacher.class, // 缓存策略：按集合对象中的元素缓存
+    spliter = AggrSpliter.class, // 拆分成多次调用的策略：反集合元素个数拆分
+    parallel = true, // 可并行
+    group = "ServiceGroupA", // 所属的组
+    fallback = ReturnNull.class // 降级策略
     )
     public List<String> getStrs(String[] args) {
         try {

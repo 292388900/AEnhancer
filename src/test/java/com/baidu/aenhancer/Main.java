@@ -9,19 +9,20 @@ public class Main {
         // System.out.print((Integer.MAX_VALUE+4) & 0x7FFFFFFF % 10);
         ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
         final BeanMock entry = context.getBean(BeanMock.class);
+        entry.getStrs(new String[] { "b", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b" });
+
         entry.get(3);
         entry.get(5);
-        entry.get(7);
         entry.testFallback();
         new Thread(new Runnable() {
 
             @Override
             public void run() {
-                entry.get(5);
-                entry.get(7);
+                entry.get(1);
+                entry.get(9);
 
             }
         }).start();
-        System.out.print(entry.costomSplit(1, 2));
+        entry.costomSplit(1, 2);
     }
 }

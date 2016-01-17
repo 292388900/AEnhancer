@@ -159,6 +159,7 @@ public class ShortCircuitTick {
                         scf[i] = new ShortCircuitFigure();
                     }
                     window = new SlidingWindow<ShortCircuitFigure>(scf);
+                    slideMaps.put(method, window);
                 }
             }
         }

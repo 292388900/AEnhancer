@@ -6,4 +6,8 @@ public class EnhancerCheckedException extends Exception {
     public EnhancerCheckedException(String message) {
         super(message);
     }
+
+    public EnhancerCheckedException(String message, Throwable e) {
+        super(message, e);
+    }
 }

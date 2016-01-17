@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -44,8 +45,8 @@ public class ExecutorFactory {
     // TODO add configuration for corePoolSize and so on
     private ExecutorService newExecSrv(int corePoolSize, int maximumPoolSize, int keepAliveTime, int queueSize) {
         TimeUnit unit = TimeUnit.SECONDS;
-        // TODO ??
-        BlockingQueue<Runnable> workQueue = new ArrayBlockingQueue<Runnable>(queueSize);
+        BlockingQueue<Runnable> workQueue =
+                queueSize > 0 ? new ArrayBlockingQueue<Runnable>(queueSize) : new LinkedBlockingQueue<Runnable>();
         // 设置为DaemonThread
         ThreadFactory threadFactory = new ThreadFactory() {
             @Override

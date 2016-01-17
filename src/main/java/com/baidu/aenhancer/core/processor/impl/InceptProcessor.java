@@ -9,18 +9,18 @@ import com.baidu.aenhancer.core.processor.ext.HookProxy;
 import com.baidu.aenhancer.exception.EnhancerRuntimeException;
 
 /**
- * 所有Processor的入口，但是它并不会引用别的Processor
+ * 所有Processor的入口，但是它并不会引用别的Processor，而是引用了Hook
  * 
  * @author xushuda
  *
  */
-public class EverythingStartFromHere extends Processor {
+public class InceptProcessor extends Processor {
 
-    public EverythingStartFromHere(Processor decoratee) {
+    public InceptProcessor(Processor decoratee) {
         super(decoratee);
     }
 
-    private final static Logger logger = LoggerFactory.getLogger(EverythingStartFromHere.class);
+    private final static Logger logger = LoggerFactory.getLogger(InceptProcessor.class);
 
     @Override
     protected Object process(ProcessContext ctx, Object param) throws Throwable {

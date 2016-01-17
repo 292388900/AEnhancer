@@ -9,6 +9,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import com.baidu.aenhancer.entry.Enhancer;
+import com.baidu.aenhancer.exception.EnhancerRuntimeException;
 import com.baidu.aenhancer.ext.impl.aggr.Aggr;
 
 public class TestEntry {
@@ -32,7 +33,11 @@ public class TestEntry {
         entry.getInt2(4);
         entry.getStr();
         entry.getStrs(new String[] { "a", "b" });
-        entry.timeoutTest();
+        try {
+            entry.timeoutTest();
+        } catch (EnhancerRuntimeException e) {
+            e.printStackTrace();
+        }
         entry.notTimeoutTest();
     }
 
