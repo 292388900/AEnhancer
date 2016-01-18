@@ -7,19 +7,21 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.baidu.aenhancer.core.conf.Configurable;
+import com.baidu.aenhancer.core.conf.ShortCircuitStateMachineConfig;
 import com.baidu.aenhancer.exception.IllegalParamException;
 
 /**
- * 只支持全局设置 TODO
- * 
  * @author xushuda
  *
  */
-public class ShortCircuitStateMachine {
+public class ShortCircuitStateMachine implements Configurable<ShortCircuitStateMachineConfig> {
 
     private Method method;
 
     private AtomicReference<TimestampdStatus> statusRef;
+
+    private ShortCircuitStateMachineConfig config;
 
     private final static Logger logger = LoggerFactory.getLogger(ShortCircuitStateMachine.class);
 
@@ -42,17 +44,29 @@ public class ShortCircuitStateMachine {
         }
     }
 
-    private int leastSample; // 最小样本个数
+    // private int leastSample; // 最小样本个数
+    //
+    // private double minSuccessPerentage; // 失败的比率
+    //
+    // private int elapse; // 自动探索的过程时间
+    //
+    // private int maxTraffic; // 限制流量大小,小于0代表不限制
+    //
+    // private int failLimit; // 至少要成功limit次,小于0代表不限制
+    //
+    // private int successLimit; // 至多失败limit次,小于0代表不限制
+    //
+    // private int aggregationSize; // 计算的时候聚合的时间窗口个数
 
-    private double minSuccessPerentage; // 失败的比率
-
-    private int elapse; // 自动探索的过程时间
-
-    private int maxTraffic; // 限制流量大小,小于0代表不限制
-
-    private int failLimit; // 至少要成功limit次,小于0代表不限制
-
-    private int successLimit; // 至多失败limit次,小于0代表不限制
+    public ShortCircuitStateMachine(Method method, Integer tick) {
+        if (null == method) {
+            throw new IllegalParamException("method is null");
+        }
+        this.method = method;
+        this.statusRef = new AtomicReference<TimestampdStatus>(new TimestampdStatus(tick, CircuitStatus.NATURAL_STATE));
+        this.config = new ShortCircuitStateMachineConfig();
+        config(config);
+    }
 
     /**
      * 
@@ -65,28 +79,32 @@ public class ShortCircuitStateMachine {
      * @param failLimit
      * @param successLimit
      */
-    public ShortCircuitStateMachine(Method method, int tick, int leastSample, double minSuccessPerentage, int elapse,
-            int maxTraffic, int failLimit, int successLimit) {
-        if (null == method) {
-            throw new IllegalParamException("method is null");
-        }
-        if (elapse < 0) {
-            throw new IllegalParamException("elapse is less than 0 :" + elapse);
-        }
-        if (minSuccessPerentage < 0 || minSuccessPerentage > 1) {
-            throw new IllegalParamException("minSuccessPerentage is gt 1 or lt 0 :" + minSuccessPerentage);
-        }
-        this.leastSample = leastSample;
-        this.minSuccessPerentage = minSuccessPerentage;
-        this.elapse = elapse;
-        this.maxTraffic = maxTraffic;
-        this.failLimit = failLimit;
-        this.successLimit = successLimit;
-        // this.statusMap = new ConcurrentHashMap<Method, AtomicReference<TimestampdStatus>>();
-        // 初始化状态，
-        this.statusRef = new AtomicReference<TimestampdStatus>(new TimestampdStatus(tick, CircuitStatus.NATURAL_STATE));
-        this.method = method;
-    }
+    // public ShortCircuitStateMachine(Method method, int tick, int leastSample, double minSuccessPerentage, int elapse,
+    // int maxTraffic, int failLimit, int successLimit, int aggregationSize) {
+    // if (null == method) {
+    // throw new IllegalParamException("method is null");
+    // }
+    // if (elapse < 0) {
+    // throw new IllegalParamException("elapse is less than 0 :" + elapse);
+    // }
+    // if (minSuccessPerentage < 0 || minSuccessPerentage > 1) {
+    // throw new IllegalParamException("minSuccessPerentage is gt 1 or lt 0 :" + minSuccessPerentage);
+    // }
+    // if (aggregationSize <= 0) {
+    // throw new IllegalParamException("aggregationSize must be positive");
+    // }
+    // this.leastSample = leastSample;
+    // this.minSuccessPerentage = minSuccessPerentage;
+    // this.elapse = elapse;
+    // this.maxTraffic = maxTraffic;
+    // this.failLimit = failLimit;
+    // this.successLimit = successLimit;
+    // // this.statusMap = new ConcurrentHashMap<Method, AtomicReference<TimestampdStatus>>();
+    // // 初始化状态，
+    // this.statusRef = new AtomicReference<TimestampdStatus>(new TimestampdStatus(tick, CircuitStatus.NATURAL_STATE));
+    // this.method = method;
+    // this.aggregationSize = aggregationSize;
+    // }
 
     /**
      * 
@@ -99,8 +117,8 @@ public class ShortCircuitStateMachine {
         TimestampdStatus ts = statusRef.get();
         switch (ts.status) {
             case NATURAL_STATE:
-                if (success + timeout + error + rej > leastSample
-                        && (double) success / (timeout + error + rej + success) < minSuccessPerentage) {
+                if (success + timeout + error + rej > config.getLeastSample()
+                        && (double) success / (timeout + error + rej + success) < config.getMinSuccessPerentage()) {
                     // 修改状态
                     if (statusRef.compareAndSet(ts, new TimestampdStatus(tick, CircuitStatus.SHORT_CIRCUIT))) {
                         logger.info(
@@ -111,20 +129,20 @@ public class ShortCircuitStateMachine {
                     shortcircuit = true;
                 }
                 // 流量控制不改变状态
-                if (maxTraffic >= 0 && success + timeout + error + rej >= maxTraffic) {
+                if (config.getMaxTraffic() >= 0 && success + timeout + error + rej >= config.getMaxTraffic()) {
                     shortcircuit = true;
                 }
                 break;
             case MIDDLE_STATE:
                 // 半开放，超过了trails次数就要短路
-                if (ts.trails.addAndGet(1) > failLimit + successLimit) {
+                if (ts.trails.addAndGet(1) > config.getFailLimit() + config.getSuccessLimit()) {
                     ts.trails.addAndGet(-1);
                     shortcircuit = true;
                 }
                 break;
             case SHORT_CIRCUIT:
                 // 超过elapse时间则变为中间状态
-                if (tick > ts.tick + elapse) {
+                if (tick > ts.tick + config.getElapse()) {
                     TimestampdStatus newTs = new TimestampdStatus(tick, CircuitStatus.MIDDLE_STATE);
                     if (statusRef.compareAndSet(ts, newTs)) {
                         newTs.trails = new AtomicInteger(0);
@@ -151,13 +169,13 @@ public class ShortCircuitStateMachine {
                 // 任何一个线程先成功改变状态，别的线程就算已经进入了这个方法区域，也无法成功改变状态
                 if (isSuccess) {
                     // 成功
-                    if (successLimit >= 0 && ts.success.addAndGet(1) >= successLimit) {
+                    if (config.getSuccessLimit() >= 0 && ts.success.addAndGet(1) >= config.getSuccessLimit()) {
                         statusRef.compareAndSet(ts, new TimestampdStatus(tick, CircuitStatus.NATURAL_STATE));
                     }
                     logger.info("success {} in middle state ", ts.success.get());
                 } else {
                     // 失败
-                    if (failLimit >= 0 && ts.fails.addAndGet(1) >= failLimit) {
+                    if (config.getFailLimit() >= 0 && ts.fails.addAndGet(1) >= config.getFailLimit()) {
                         statusRef.compareAndSet(ts, new TimestampdStatus(tick, CircuitStatus.SHORT_CIRCUIT));
                     }
                 }
@@ -166,5 +184,24 @@ public class ShortCircuitStateMachine {
             default:
                 break;
         }
+    }
+
+    @Override
+    public ShortCircuitStateMachineConfig getConfig() {
+        return config;
+    }
+
+    @Override
+    public void config(ShortCircuitStateMachineConfig newConfig) {
+        this.config = newConfig;
+    }
+
+    @Override
+    public String namespace() {
+        return method.getDeclaringClass().getName() + "." + method.getName() + ".shortcircuit";
+    }
+
+    public int getAggregationSize() {
+        return config.getAggregationSize();
     }
 }

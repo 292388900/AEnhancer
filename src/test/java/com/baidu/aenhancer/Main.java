@@ -1,7 +1,14 @@
 package com.baidu.aenhancer;
 
+import java.io.IOException;
+
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+import com.baidu.aenhancer.core.conf.ConfigManager;
+import com.baidu.aenhancer.core.processor.ext.impl.ShortCircuitStateMachine;
+import com.baidu.aenhancer.core.processor.ext.impl.ShortCircuitTick;
+import com.baidu.aenhancer.exception.CodingError;
 
 public class Main {
 
@@ -10,19 +17,23 @@ public class Main {
         ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
         final BeanMock entry = context.getBean(BeanMock.class);
         entry.getStrs(new String[] { "b", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b" });
-
-        entry.get(3);
         entry.get(5);
         entry.testFallback();
-        new Thread(new Runnable() {
-
-            @Override
-            public void run() {
-                entry.get(1);
-                entry.get(9);
-
-            }
-        }).start();
         entry.costomSplit(1, 2);
+        try {
+            ConfigManager cm = ConfigManager.getInstance();
+            cm.factory(ShortCircuitStateMachine.class, Main.class.getDeclaredMethods()[0], 2);
+            cm.factory(ShortCircuitTick.class);
+        } catch (CodingError e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (SecurityException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
     }
 }

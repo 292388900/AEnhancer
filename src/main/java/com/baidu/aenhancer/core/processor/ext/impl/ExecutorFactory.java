@@ -71,6 +71,7 @@ public class ExecutorFactory {
         // 没有就新建
         if (null == execSrv) {
             synchronized (this) {
+                execSrv = executorPool.get(group);
                 if (null == execSrv) {
                     execSrv = newExecSrv(5, 10, 30, 25);
                     executorPool.put(group, execSrv);

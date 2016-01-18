@@ -11,6 +11,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.baidu.aenhancer.core.conf.Configurable;
+import com.baidu.aenhancer.core.conf.ShortCircuitSlidingWindowConfig;
+
 /**
  * 包含一个Timer线程，TickTock,
  * 
@@ -19,33 +22,17 @@ import org.slf4j.LoggerFactory;
  * @author xushuda
  *
  */
-public class ShortCircuitTick {
+public class ShortCircuitTick implements Configurable<ShortCircuitSlidingWindowConfig> {
+
     private final static Logger logger = LoggerFactory.getLogger(ShortCircuitTick.class);
 
-    private final Timer timer = new Timer(true);
+    private volatile Timer timer = new Timer(true);
 
     private volatile int tick; // 当前的时间戳id
 
-    private final int windowSize; // 时间窗口的大小
+    private ShortCircuitSlidingWindowConfig config;
 
     private final ConcurrentHashMap<Method, SlidingWindow<ShortCircuitFigure>> slideMaps;
-
-    private static volatile ShortCircuitTick instance;
-
-    /**
-     * @return
-     */
-    public static ShortCircuitTick getInstance() {
-        if (null == instance) {
-            synchronized (ShortCircuitTick.class) {
-                if (null == instance) {
-                    // 5000毫秒，最大20个窗口
-                    instance = new ShortCircuitTick(5000, 20);
-                }
-            }
-        }
-        return instance;
-    }
 
     public int getTick() {
         return tick;
@@ -55,16 +42,10 @@ public class ShortCircuitTick {
      * 
      * @param interval 每个时间间隔的大小
      */
-    private ShortCircuitTick(final long interval, int windowSize) {
+    public ShortCircuitTick() {
         slideMaps = new ConcurrentHashMap<Method, SlidingWindow<ShortCircuitFigure>>();
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                tick += 1; // 每过interval时间就会+1
-                logger.info("after {} milliseconds, ++tick={}", interval, tick);
-            }
-        }, interval, interval);
-        this.windowSize = windowSize;
+        config = new ShortCircuitSlidingWindowConfig();
+        config(config); // FIXME 无法改变已经生成的window的size
     }
 
     /**
@@ -154,8 +135,8 @@ public class ShortCircuitTick {
             synchronized (method) {
                 window = slideMaps.get(method);
                 if (null == window) {
-                    ShortCircuitFigure[] scf = new ShortCircuitFigure[windowSize];
-                    for (int i = 0; i < windowSize; i++) {
+                    ShortCircuitFigure[] scf = new ShortCircuitFigure[config.getWindowSize()];
+                    for (int i = 0; i < config.getWindowSize(); i++) {
                         scf[i] = new ShortCircuitFigure();
                     }
                     window = new SlidingWindow<ShortCircuitFigure>(scf);
@@ -215,5 +196,33 @@ public class ShortCircuitTick {
             slots[id % slots.length] = data;
         }
 
+    }
+
+    @Override
+    public ShortCircuitSlidingWindowConfig getConfig() {
+        return config;
+    }
+
+    @Override
+    public void config(final ShortCircuitSlidingWindowConfig config) {
+        this.config = config;
+        synchronized (this) {
+            if (null != timer) {
+                timer.cancel();
+            }
+            timer = new Timer(true);
+            timer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    tick += 1; // 每过interval时间就会+1
+                    logger.info("after {} milliseconds, ++tick={}", config.getInterval(), tick);
+                }
+            }, config.getInterval(), config.getInterval());
+        }
+    }
+
+    @Override
+    public String namespace() {
+        return "shortcircuit";
     }
 }

@@ -1,5 +1,7 @@
 package com.baidu.aenhancer.core.context;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Random;
@@ -49,7 +51,8 @@ public class AopContext implements ProcessContext {
     private ShortCircuitable shortcircuit = null;
 
     public AopContext(Enhancer annotation, ProceedingJoinPoint jp, ApplicationContext context)
-            throws InstantiationException, IllegalAccessException, CodingError {
+            throws InstantiationException, IllegalAccessException, CodingError, SecurityException,
+            NoSuchMethodException, IllegalArgumentException, InvocationTargetException {
         ctxId = new Random().nextLong();
         this.annotation = annotation;
         this.jp = jp;
@@ -57,13 +60,17 @@ public class AopContext implements ProcessContext {
 
         // cacher
         if (annotation.cacher() != Enhancer.NULL.class) {
-            cacher = annotation.cacher().newInstance();
+            Constructor<? extends CacheProxy> cons = annotation.cacher().getConstructor();
+            cons.setAccessible(true);
+            cacher = cons.newInstance();
             cacher.init(jp, context);
         }
 
         // spliter
         if (annotation.spliter() != Enhancer.NULL.class) {
-            spliter = getSplitProxy(annotation.spliter().newInstance());
+            Constructor<? extends Splitable> cons = annotation.spliter().getConstructor();
+            cons.setAccessible(true);
+            spliter = getSplitProxy(cons.newInstance());
             if (null == spliter) {
                 throw new CodingError("no @Split and @Collapse Annotationed method in class: " + annotation.spliter());
             }
@@ -72,28 +79,35 @@ public class AopContext implements ProcessContext {
 
         // fall back
         if (annotation.fallback() != Enhancer.NULL.class) {
-            fallback = genInnerFallBack(annotation.fallback().newInstance());
+            Constructor<? extends Fallbackable> cons = annotation.fallback().getConstructor();
+            cons.setAccessible(true);
+            fallback = genInnerFallBack(cons.newInstance());
             if (null == fallback) {
                 throw new CodingError("no @FallBackMock on any method of class:" + annotation.fallback());
             }
             fallback.init(jp, context);
         }
 
+        // shortcircuit
+        if (annotation.shortcircuit() != NULL.class) {
+            Constructor<? extends ShortCircuitable> cons = annotation.shortcircuit().getConstructor();
+            cons.setAccessible(true);
+            shortcircuit = cons.newInstance();
+            shortcircuit.init(jp, context);
+        }
+
         // hook
         if (annotation.hook() == null) {
             throw new CodingError("hook is a must have (not null) annotation, by default is Hooker.class");
         }
-        hook = getHookProxy(annotation.hook().newInstance());
+        Constructor<? extends Hookable> cons = annotation.hook().getConstructor();
+        cons.setAccessible(true);
+        hook = getHookProxy(cons.newInstance());
         if (null == hook) {
             throw new CodingError("must have a @Hook method in class: " + annotation.hook());
         }
         hook.init(jp, context);
 
-        // shortcircuit
-        if (annotation.shortcircuit() != NULL.class) {
-            shortcircuit = annotation.shortcircuit().newInstance();
-            shortcircuit.init(jp, context);
-        }
     }
 
     private HookProxy getHookProxy(final Hookable userHook) {

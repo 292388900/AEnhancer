@@ -14,6 +14,8 @@ import com.baidu.aenhancer.core.context.ProcessContext;
 import com.baidu.aenhancer.core.processor.Processor;
 import com.baidu.aenhancer.core.processor.impl.InceptProcessor;
 import com.baidu.aenhancer.exception.EnhancerCheckedException;
+import com.baidu.aenhancer.exception.EnhancerRuntimeException;
+import com.baidu.aenhancer.exception.ShortCircuitExcption;
 
 /**
  * 定义修饰的切点（point cut）和它的连接点（join point）处理
@@ -50,13 +52,18 @@ public class EnhancerAspect implements ApplicationContextAware {
             Object ret = initd.doo(ctx, ctx.getArgs());
             logger.info("ctx_id: {} finished, ret: \"{}\"", ctx.getCtxId(), ret);
             return ret;
+        } catch (ShortCircuitExcption e) {
+            logger.error(" ctxId: {} ,method: \"{}\", short circuit occors in processing , caused by: ",
+                    ctx != null ? ctx.getCtxId() : 0, jp.getSignature().toLongString(), e);
+            throw new EnhancerRuntimeException("short circuit not caught by short circuit state machine: "
+                    + e.getShortCircuitType());
         } catch (EnhancerCheckedException e) {
-            logger.error(" ctxId: {} ,method: \"{}\", fatal error occors in processing , caused by: ",
+            logger.error(" ctxId: {} ,method: \"{}\",revive fatal error which caused by: ",
                     ctx != null ? ctx.getCtxId() : 0, jp.getSignature().toLongString(), e);
             return jp.proceed(jp.getArgs());
         } catch (RuntimeException rtExp) {
             // swallow the runtime exception
-            logger.error("ctx_id: {} ,  exception occurs in cache aop , caused by: ", ctx != null ? ctx.getCtxId() : 0,
+            logger.error("ctx_id: {} , runtime exception occurs in cache aop , caused by: ", ctx != null ? ctx.getCtxId() : 0,
                     rtExp);
             throw rtExp;
         }
