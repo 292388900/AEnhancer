@@ -1,6 +1,5 @@
 package com.baidu.aenhancer.core.processor.ext.impl;
 
-import java.io.IOException;
 import java.lang.reflect.Method;
 
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -29,12 +28,8 @@ public class DefaultShortCircuit implements ShortCircuitable {
     public void init(ProceedingJoinPoint jp, ApplicationContext context) throws CodingError {
         // 这个signature是父类的signature
         method = ((MethodSignature) jp.getSignature()).getMethod();
-        try {
-            sct = ShortCircuitTickFactory.getInstance();
-            scsm = ShortCircuitStateMachineFactory.getInstance().getStateMachine(method, sct.getTick());
-        } catch (IOException e) {
-            throw new CodingError("can't get state machine", e);
-        }
+        sct = ShortCircuitTickFactory.getInstance();
+        scsm = ShortCircuitStateMachineFactory.getInstance().getStateMachine(method, sct.getTick());
         calSize = scsm.getAggregationSize();
     }
 

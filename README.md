@@ -16,14 +16,13 @@
     * 6、服务降级  
     * 7、异常模块（比如依赖的远程服务失效）的短路控制  
     * 8、流量限制（方法调用次数控制）  
-    * 9、插件式扩展（用户可自定义特性） 
       
 	PS：
 		1、上述所有支持的特性都是“正交的”（正交性：互不影响，任意组合） 
 		2、在使用并行支持的时候，对于任何线程变量（ThreadLocal）需要多加小心。 
 		3、由于Enhancer的状态机囿于一个Jvm中，所以对于分布式环境，需要更多的考虑：
 		   比如流量限制模块就需要结合LoadBalance策略考虑
-		4、best practice：可以与分布式配置中心，或Monitor结合，以提供配置与监控
+		4、best practice：可以与分布式配置中心，或Monitor结合，以提供分布式环境的集成
 
 
 ## 示例：
@@ -124,13 +123,13 @@
 
 # 帮助改进特性:
 1、xml的配置方式  
-2、executorFactory，shortCircuitTick，shortCircuitStateMachineFactory读取配置文件
+~~2、线程池，短路控制模块读取配置文件~~ Done @1.19 by xusoda  
 4、代理类的级别优先级控制  
 ~~5、与Spring Hibernate整合多线程测试~~ Done @1.17 by xusoda  
 ~~6、短路：流量控制，错误短路。~~ Done @1.16 by xusoda  
 ~~7、所有自有实现都使用插件化~~ Done @1.15 by xusoda  
 8、逻辑流图  
-9、将所有对象的new改为抽象工厂创建，与Spring整合与依赖分离   
+9、将所有对象的new改为抽象工厂（自己的DI容器）创建，与Spring整合与依赖分离   
 ~~10、使得配置可以reload，或者说override~~ Done @1.19 by xusoda  
 ~~11、使用静态织入的方式，不用对Spring依赖，只对Aspectj依赖~~ Pending @1.17 by xusoda  
 ~~12、短路分method控制，线程池分group控制~~ Done @1.20 by xusoda  

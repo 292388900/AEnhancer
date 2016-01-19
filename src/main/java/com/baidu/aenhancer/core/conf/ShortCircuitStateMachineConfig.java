@@ -1,6 +1,6 @@
 package com.baidu.aenhancer.core.conf;
 
-public class ShortCircuitStateMachineConfig {
+public class ShortCircuitStateMachineConfig implements Cloneable {
     private int leastSample; // 最小样本个数
 
     private double minSuccessPerentage; // 失败的比率

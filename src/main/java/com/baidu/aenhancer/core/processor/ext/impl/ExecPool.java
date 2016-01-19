@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -14,72 +13,75 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.baidu.aenhancer.core.conf.Configurable;
+import com.baidu.aenhancer.core.conf.ExecutorPoolConfig;
 import com.baidu.aenhancer.core.context.ProcessContext;
 import com.baidu.aenhancer.core.processor.Processor;
 
-public class ExecutorFactory {
+public class ExecPool implements Configurable<ExecutorPoolConfig> {
     public static final String SHARED = "SHARED_POOL";
-    private final static Logger logger = LoggerFactory.getLogger(ExecutorFactory.class);
 
-    private static volatile ExecutorFactory instance;
-    private final ConcurrentHashMap<String, ExecutorService> executorPool;
+    private final static Logger logger = LoggerFactory.getLogger(ExecPool.class);
 
-    public static ExecutorFactory getInstance() {
-        if (null == instance) {
-            synchronized (ExecutorFactory.class) {
-                if (null == instance) {
-                    instance = new ExecutorFactory();
-                }
-            }
-        }
-        return instance;
+    private volatile ExecutorPoolConfig poolConfig;
+    private volatile ExecutorService execPool;
+    private String group;
+
+    public ExecPool(String group) {
+        this.group = group;
+        this.poolConfig = new ExecutorPoolConfig();
     }
 
-    private ExecutorFactory() {
-        executorPool = new ConcurrentHashMap<String, ExecutorService>();
+    @Override
+    public ExecutorPoolConfig getConfig() {
+        return poolConfig;
     }
 
-    // TODO add configuration for corePoolSize and so on
-    private ExecutorService newExecSrv(int corePoolSize, int maximumPoolSize, int keepAliveTime, int queueSize) {
-        TimeUnit unit = TimeUnit.SECONDS;
-        BlockingQueue<Runnable> workQueue =
-                queueSize > 0 ? new ArrayBlockingQueue<Runnable>(queueSize) : new LinkedBlockingQueue<Runnable>();
-        // 设置为DaemonThread
-        ThreadFactory threadFactory = new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                logger.info("a new thread is created by ExecPool");
-                Thread td = new Thread(r);
-                td.setDaemon(true);
-                return td;
-            }
-        };
-        return new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory);
+    @Override
+    public void config(ExecutorPoolConfig config) {
+        this.poolConfig = config;
+    }
+
+    @Override
+    public String namespace() {
+        return StringUtils.isEmpty(group) ? SHARED : group + ".thread.pool";
     }
 
     /**
+     * lazy init ExecPool
      * 
-     * @param group
      * @return
      */
-    private ExecutorService getByGroup(String group) {
-        ExecutorService execSrv = executorPool.get(group);
-
-        // 没有就新建
-        if (null == execSrv) {
+    private ExecutorService getExecPool() {
+        if (null == execPool) {
             synchronized (this) {
-                execSrv = executorPool.get(group);
-                if (null == execSrv) {
-                    execSrv = newExecSrv(5, 10, 30, 25);
-                    executorPool.put(group, execSrv);
-                    logger.info("executor is inited for group: {}", group);
+                if (null == execPool) {
+
+                    TimeUnit unit = TimeUnit.MILLISECONDS;
+                    BlockingQueue<Runnable> workQueue =
+                            poolConfig.getQueueSize() > 0 ? new ArrayBlockingQueue<Runnable>(poolConfig.getQueueSize())
+                                    : new LinkedBlockingQueue<Runnable>();
+                    // 设置为DaemonThread
+                    ThreadFactory threadFactory = new ThreadFactory() {
+                        @Override
+                        public Thread newThread(Runnable r) {
+                            logger.info("a new thread is created by ExecPool");
+                            Thread td = new Thread(r);
+                            td.setDaemon(true);
+                            return td;
+                        }
+                    };
+                    execPool =
+                            new ThreadPoolExecutor(poolConfig.getCorePoolSize(), poolConfig.getMaximumPoolSize(),
+                                    poolConfig.getKeepAliveTime(), unit, workQueue, threadFactory);
                 }
             }
         }
-        return execSrv;
+        return execPool;
     }
 
     /**
@@ -90,9 +92,7 @@ public class ExecutorFactory {
      * @param param
      * @return
      */
-    public Future<Object> submitProcess(String group, final Processor processor, final ProcessContext ctx,
-            final Object param) {
-        ExecutorService execSrv = getByGroup(group);
+    public Future<Object> submitProcess(final Processor processor, final ProcessContext ctx, final Object param) {
         // 需要执行的方法
         Callable<Object> callable = new Callable<Object>() {
             @Override
@@ -108,7 +108,7 @@ public class ExecutorFactory {
                 }
             }
         };
-        return execSrv.submit(callable);
+        return getExecPool().submit(callable);
     }
 
     /**
@@ -122,10 +122,8 @@ public class ExecutorFactory {
      * @return
      * @throws InterruptedException
      */
-    public List<Future<Object>> submitProcess(String group, final Processor processor, final ProcessContext ctx,
+    public List<Future<Object>> submitProcess(final Processor processor, final ProcessContext ctx,
             final List<Object> params, long timeout) throws InterruptedException {
-        ExecutorService execSrv = getByGroup(group);
-
         List<Callable<Object>> tasks = new ArrayList<Callable<Object>>();
         for (final Object param : params) {
             // 需要执行的方法
@@ -145,7 +143,7 @@ public class ExecutorFactory {
             };
             tasks.add(callable);
         }
-        return execSrv.invokeAll(tasks, timeout, TimeUnit.MILLISECONDS);
+        return getExecPool().invokeAll(tasks, timeout, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -157,10 +155,8 @@ public class ExecutorFactory {
      * @return
      * @throws InterruptedException
      */
-    public List<Future<Object>> submitProcess(String group, final Processor processor, final ProcessContext ctx,
+    public List<Future<Object>> submitProcess(final Processor processor, final ProcessContext ctx,
             final List<Object> params) throws InterruptedException {
-        ExecutorService execSrv = getByGroup(group);
-
         List<Callable<Object>> tasks = new ArrayList<Callable<Object>>();
         for (final Object param : params) {
             // 需要执行的方法
@@ -180,6 +176,6 @@ public class ExecutorFactory {
             };
             tasks.add(callable);
         }
-        return execSrv.invokeAll(tasks);
+        return getExecPool().invokeAll(tasks);
     }
 }

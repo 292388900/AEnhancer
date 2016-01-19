@@ -11,14 +11,22 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.baidu.aenhancer.exception.CodingError;
 
 /**
- * 可以使用通配符来设置配置字段
  * 
- * 实现Configurable的类
+ * 将Configurable类的“namespace”和各个config文件的“字段名”结合，影射为properties文件中的字段<br>
+ * properties中的字段可以使用*通配符来设置配置
+ * 
+ * 创建实现Configurable的类，这个类不是工厂，它只关心对象是怎么配置的，不关心对象创建的规则。<br>
+ * 具体对象怎么创建怎么维护还是由Factory类来实现，所以工厂类只需关心对象的生命周期等
  * 
  * 
  * 
@@ -27,76 +35,76 @@ import com.baidu.aenhancer.exception.CodingError;
  */
 public class ConfigManager {
 
-    private static ConfigManager instance;
+    private final static Logger logger = LoggerFactory.getLogger(ConfigManager.class);
+    private static final String DEFAULT_CONFIG_FILE_Name = "/enhancer.properties";
+    private static final ConcurrentHashMap<String, ConfigSet> fileConfMap = new ConcurrentHashMap<String, ConfigSet>();
+    static {
 
-    private Properties props;
-    private Map<String, Pattern> propPatterns;
-
-    /**
-     * 
-     * @throws IOException
-     */
-    private ConfigManager() throws IOException {
-        props = new Properties();
-        InputStream is = null;
-        try {
-            is = this.getClass().getResourceAsStream("/enhancer.properties");
-            props.load(is);
-            propPatterns = new HashMap<String, Pattern>();
-            Enumeration<?> e = props.propertyNames();
-            while (e.hasMoreElements()) {
-                String key = String.class.cast(e.nextElement());
-                propPatterns.put(key, Pattern.compile(key));
-            }
-        } finally {
-            if (is != null) {
-                is.close();
-            }
-        }
     }
 
     /**
-     * 获取单例
+     * 是否有失败
      * 
-     * @return
-     * @throws IOException
+     * @return true
      */
-    public static ConfigManager getInstance() throws IOException {
-        if (null == instance) {
-            synchronized (ConfigManager.class) {
-                if (null == instance) {
-                    instance = new ConfigManager();
-                }
+    public static boolean yieldAll() {
+        for (ConfigSet config : fileConfMap.values()) {
+            try {
+                config.yield();
+            } catch (CodingError e) {
+                logger.error("error when yield ", e);
+                return false;
             }
         }
-        return instance;
+        return true;
+    }
+
+    /**
+     * 是否有失败
+     * 
+     * @param fileName
+     */
+    public static boolean yield(String fileName) {
+        ConfigSet config = fileConfMap.get(fileName);
+        if (null != config) {
+            try {
+                config.yield();
+            } catch (CodingError e) {
+                logger.error("error when yield ", e);
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
      * 
      * @param confCls
-     * @param id
+     * @param namespace
      * @return
      * @throws CodingError
      */
-    public <CONF> CONF getConfObject(Class<CONF> confCls, String id) throws CodingError {
+    private static <CONF> CONF getConfObject(Class<CONF> confCls, Map<String, Pattern> patterns, Properties props,
+            String namespace) throws CodingError {
         try {
             Constructor<CONF> cons = confCls.getConstructor();
             cons.setAccessible(true);
             CONF config = cons.newInstance();
             for (Field field : confCls.getDeclaredFields()) {
                 field.setAccessible(true);
-                String propName = id + "." + field.getName();
-                if (propPatterns.containsKey(propName)) {
-                    fieldSet(field, propName, config);
+                String propName = namespace + "." + field.getName();
+                // 先完全匹配
+                if (patterns.containsKey(propName)) {
+                    fieldSet(field, props, propName, config);
                 } else {
-                    for (Entry<String, Pattern> kv : propPatterns.entrySet()) {
+                    // 没有再*匹配
+                    for (Entry<String, Pattern> kv : patterns.entrySet()) {
                         if (kv.getValue().matcher(propName).find()) {
-                            fieldSet(field, kv.getKey(), config);
+                            fieldSet(field, props, kv.getKey(), config);
                             break;
                         }
                     }
-                    // 如果没有设置，就是默认值
+                    // 如果都没有匹配，就是默认值
                 }
             }
             return config;
@@ -112,9 +120,22 @@ public class ConfigManager {
      * @return
      * @throws CodingError
      */
+    public static <CONF, OBJ extends Configurable<CONF>> OBJ factory(Class<OBJ> clazz, Object...p) throws CodingError {
+        return factory(DEFAULT_CONFIG_FILE_Name, clazz, p);
+    }
+
+    /**
+     * 
+     * @param clazz
+     * @param p
+     * @return
+     * @throws CodingError
+     */
     @SuppressWarnings("unchecked")
-    public <CONF, OBJ extends Configurable<CONF>> OBJ factory(Class<OBJ> clazz, Object...p) throws CodingError {
+    public static <CONF, OBJ extends Configurable<CONF>> OBJ factory(String fileName, Class<OBJ> clazz, Object...p)
+            throws CodingError {
         OBJ ret = null;
+        // 由Configurable类获取泛型的配置类
         Class<CONF> confCls = null;
         Type[] types = clazz.getGenericInterfaces();
         for (Type t : types) {
@@ -122,7 +143,7 @@ public class ConfigManager {
                     && Configurable.class.isAssignableFrom((Class<?>) (((ParameterizedType) t).getRawType()))) {
                 Type[] args = ((ParameterizedType) t).getActualTypeArguments();
                 if (args[0] instanceof Class) {
-                    confCls = (Class<CONF>) args[0];
+                    confCls = (Class<CONF>) args[0]; // TODO [0]
                     break;
                 }
             }
@@ -141,14 +162,25 @@ public class ConfigManager {
             } else {
                 ret = clazz.newInstance();
             }
+            ConfigSet configs = getConfSet(fileName);
             // get config obj
-            CONF config = getConfObject(confCls, ret.namespace());
+            CONF config = getConfObject(confCls, configs.getPatterns(), configs.getProperties(), ret.namespace());
             // config
             ret.config(config);
+            // attach
+            configs.attach(ret);
+            // return
             return ret;
         } catch (Exception e) {
             throw new CodingError("error read the config", e);
         }
+    }
+
+    private static ConfigSet getConfSet(String fileName) {
+        if (null == fileConfMap.get(fileName)) {
+            fileConfMap.putIfAbsent(fileName, new ConfigSet(fileName));
+        }
+        return fileConfMap.get(fileName);
     }
 
     /**
@@ -156,7 +188,7 @@ public class ConfigManager {
      * @param from
      * @return
      */
-    private Class<?> checkPrimitive(Class<?> from) {
+    private static Class<?> checkPrimitive(Class<?> from) {
         if (from.isPrimitive()) {
             if (from == Integer.class) {
                 return int.class;
@@ -184,8 +216,112 @@ public class ConfigManager {
      * @param field
      * @param propName
      * @param confObj
+     * @throws IllegalAccessException
+     * @throws IllegalArgumentException
+     * @throws NumberFormatException
      */
-    private void fieldSet(Field field, String propName, Object confObj) {
-        System.out.println(propName); // TODO complete
+    private static void fieldSet(Field field, Properties props, String propName, Object confObj)
+            throws NumberFormatException, IllegalArgumentException, IllegalAccessException {
+        Class<?> from = field.getType();
+        if (from == Integer.class || from == int.class) {
+            field.setInt(
+                    confObj,
+                    Integer.valueOf(props.getProperty(propName)) == null ? 0 : Integer.valueOf(props
+                            .getProperty(propName)));
+        } else if (from == Boolean.class || from == boolean.class) {
+            field.setBoolean(
+                    confObj,
+                    Boolean.valueOf(props.getProperty(propName)) == null ? true : Boolean.valueOf(props
+                            .getProperty(propName)));
+        } else if (from == Double.class || from == double.class) {
+            field.setDouble(
+                    confObj,
+                    Double.valueOf(props.getProperty(propName)) == null ? 0.0 : Double.valueOf(props
+                            .getProperty(propName)));
+        } else if (from == Short.class || from == short.class) {
+            field.setShort(confObj,
+                    Short.valueOf(props.getProperty(propName)) == null ? 0 : Short.valueOf(props.getProperty(propName)));
+        } else if (from == Long.class || from == long.class) {
+            field.setLong(confObj,
+                    Long.valueOf(props.getProperty(propName)) == null ? 0 : Long.valueOf(props.getProperty(propName)));
+        } else if (from == Byte.class || from == byte.class) {
+            field.setByte(confObj,
+                    Byte.valueOf(props.getProperty(propName)) == null ? 0 : Byte.valueOf(props.getProperty(propName)));
+        } else if (from == Float.class || from == float.class) {
+            field.setFloat(confObj,
+                    Float.valueOf(props.getProperty(propName)) == null ? 0 : Float.valueOf(props.getProperty(propName)));
+        } else if (from == Character.class || from == char.class) {
+            field.setChar(confObj, props.getProperty(propName).charAt(0));
+        }
+        Object newValue = field.get(confObj);
+        logger.info("field :{} is set to {}, key={}", field.getName(), newValue, propName);
+    }
+
+    /**
+     * 一个配置文件对应的类
+     * 
+     * @author xushuda
+     *
+     */
+    static class ConfigSet {
+        private volatile Properties props;
+        private volatile Map<String, Pattern> patterns;
+        private CopyOnWriteArrayList<Configurable<?>> attachments;
+        private final String fileName;
+
+        private void init(Properties props, Map<String, Pattern> patterns, String fileName) {
+            InputStream is = null;
+            try {
+                is = ConfigManager.class.getResourceAsStream(fileName);
+                props.load(is);
+                Enumeration<?> e = props.propertyNames();
+                while (e.hasMoreElements()) {
+                    String key = String.class.cast(e.nextElement());
+                    patterns.put(key, Pattern.compile(key));
+                }
+            } catch (IOException e1) {
+            } finally {
+                if (is != null) {
+                    try {
+                        is.close();
+                    } catch (IOException e) {
+                    }
+                }
+            }
+        }
+
+        @SuppressWarnings({ "unchecked", "rawtypes" })
+        public void yield() throws CodingError {
+            Properties props = new Properties();
+            Map<String, Pattern> patterns = new HashMap<String, Pattern>();
+            init(props, patterns, fileName);
+            this.patterns = patterns;
+            this.props = props;
+            for (Configurable configTarget : attachments) {
+                Object config =
+                        getConfObject(configTarget.getConfig().getClass(), patterns, props, configTarget.namespace());
+                configTarget.config(config);
+            }
+        }
+
+        public ConfigSet(String fileName) {
+            this.fileName = fileName;
+            props = new Properties();
+            patterns = new HashMap<String, Pattern>();
+            attachments = new CopyOnWriteArrayList<Configurable<?>>();
+            init(props, patterns, fileName);
+        }
+
+        synchronized public void attach(Configurable<?> attachment) {
+            attachments.add(attachment);
+        }
+
+        public Properties getProperties() {
+            return props;
+        }
+
+        public Map<String, Pattern> getPatterns() {
+            return patterns;
+        }
     }
 }

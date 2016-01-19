@@ -19,9 +19,9 @@ public class ShortCircuitStateMachine implements Configurable<ShortCircuitStateM
 
     private Method method;
 
-    private AtomicReference<TimestampdStatus> statusRef;
+    private final AtomicReference<TimestampdStatus> statusRef;
 
-    private ShortCircuitStateMachineConfig config;
+    private volatile ShortCircuitStateMachineConfig config;
 
     private final static Logger logger = LoggerFactory.getLogger(ShortCircuitStateMachine.class);
 
@@ -44,20 +44,6 @@ public class ShortCircuitStateMachine implements Configurable<ShortCircuitStateM
         }
     }
 
-    // private int leastSample; // 最小样本个数
-    //
-    // private double minSuccessPerentage; // 失败的比率
-    //
-    // private int elapse; // 自动探索的过程时间
-    //
-    // private int maxTraffic; // 限制流量大小,小于0代表不限制
-    //
-    // private int failLimit; // 至少要成功limit次,小于0代表不限制
-    //
-    // private int successLimit; // 至多失败limit次,小于0代表不限制
-    //
-    // private int aggregationSize; // 计算的时候聚合的时间窗口个数
-
     public ShortCircuitStateMachine(Method method, Integer tick) {
         if (null == method) {
             throw new IllegalParamException("method is null");
@@ -67,44 +53,6 @@ public class ShortCircuitStateMachine implements Configurable<ShortCircuitStateM
         this.config = new ShortCircuitStateMachineConfig();
         config(config);
     }
-
-    /**
-     * 
-     * @param method
-     * @param tick
-     * @param leastSample
-     * @param minSuccessPerentage
-     * @param elapse
-     * @param maxTraffic
-     * @param failLimit
-     * @param successLimit
-     */
-    // public ShortCircuitStateMachine(Method method, int tick, int leastSample, double minSuccessPerentage, int elapse,
-    // int maxTraffic, int failLimit, int successLimit, int aggregationSize) {
-    // if (null == method) {
-    // throw new IllegalParamException("method is null");
-    // }
-    // if (elapse < 0) {
-    // throw new IllegalParamException("elapse is less than 0 :" + elapse);
-    // }
-    // if (minSuccessPerentage < 0 || minSuccessPerentage > 1) {
-    // throw new IllegalParamException("minSuccessPerentage is gt 1 or lt 0 :" + minSuccessPerentage);
-    // }
-    // if (aggregationSize <= 0) {
-    // throw new IllegalParamException("aggregationSize must be positive");
-    // }
-    // this.leastSample = leastSample;
-    // this.minSuccessPerentage = minSuccessPerentage;
-    // this.elapse = elapse;
-    // this.maxTraffic = maxTraffic;
-    // this.failLimit = failLimit;
-    // this.successLimit = successLimit;
-    // // this.statusMap = new ConcurrentHashMap<Method, AtomicReference<TimestampdStatus>>();
-    // // 初始化状态，
-    // this.statusRef = new AtomicReference<TimestampdStatus>(new TimestampdStatus(tick, CircuitStatus.NATURAL_STATE));
-    // this.method = method;
-    // this.aggregationSize = aggregationSize;
-    // }
 
     /**
      * 
@@ -198,7 +146,7 @@ public class ShortCircuitStateMachine implements Configurable<ShortCircuitStateM
 
     @Override
     public String namespace() {
-        return method.getDeclaringClass().getName() + "." + method.getName() + ".shortcircuit";
+        return method.getDeclaringClass().getName() + "." + method.getName() + ".short.circuit";
     }
 
     public int getAggregationSize() {

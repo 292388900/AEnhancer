@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 import com.baidu.aenhancer.core.context.ProcessContext;
 import com.baidu.aenhancer.core.context.ShortCircuitType;
 import com.baidu.aenhancer.core.processor.Processor;
-import com.baidu.aenhancer.core.processor.ext.impl.ExecutorFactory;
+import com.baidu.aenhancer.core.processor.ext.impl.ExecPoolFactory;
 import com.baidu.aenhancer.exception.ShortCircuitExcption;
 import com.baidu.aenhancer.exception.UnexpectedStateException;
 
@@ -25,7 +25,7 @@ import com.baidu.aenhancer.exception.UnexpectedStateException;
  *
  */
 public class SyncTimeoutProcessor extends Processor {
-    
+
     public SyncTimeoutProcessor(Processor decoratee) {
         super(decoratee);
     }
@@ -34,7 +34,8 @@ public class SyncTimeoutProcessor extends Processor {
 
     @Override
     public Object process(ProcessContext ctx, Object param) throws Throwable {
-        Future<Object> data = ExecutorFactory.getInstance().submitProcess(ctx.getGroup(), decoratee, ctx, param);
+        Future<Object> data =
+                ExecPoolFactory.getInstance().getExecPool(ctx.getGroup()).submitProcess(decoratee, ctx, param);
         int timeout = ctx.getTimeout();
         logger.info("ctxId: {} ,task start at {} while timeout is {}", ctx.getCtxId(), System.currentTimeMillis(),
                 timeout);

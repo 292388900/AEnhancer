@@ -13,7 +13,7 @@ import com.baidu.aenhancer.core.context.ProcessContext;
 import com.baidu.aenhancer.core.context.ShortCircuitType;
 import com.baidu.aenhancer.core.processor.Processor;
 import com.baidu.aenhancer.core.processor.ext.SplitProxy;
-import com.baidu.aenhancer.core.processor.ext.impl.ExecutorFactory;
+import com.baidu.aenhancer.core.processor.ext.impl.ExecPoolFactory;
 import com.baidu.aenhancer.exception.ShortCircuitExcption;
 
 /**
@@ -47,9 +47,9 @@ public class AsyncSplitNTimeoutProcessor extends Processor {
                     params.size(), System.currentTimeMillis(), ctx.getTimeout());
             // 在这个方法这里可能会阻塞timeout 秒时长
             List<Future<Object>> futures =
-                    ctx.getTimeout() > 0 ? ExecutorFactory.getInstance().submitProcess(ctx.getGroup(), decoratee, ctx,
-                            params, ctx.getTimeout()) : ExecutorFactory.getInstance().submitProcess(ctx.getGroup(),
-                            decoratee, ctx, params);
+                    ctx.getTimeout() > 0 ? ExecPoolFactory.getInstance().getExecPool(ctx.getGroup())
+                            .submitProcess(decoratee, ctx, params, ctx.getTimeout()) : ExecPoolFactory.getInstance()
+                            .getExecPool(ctx.getGroup()).submitProcess(decoratee, ctx, params);
             // 如果没有被rej，interrupt，则都完成
             for (Future<Object> future : futures) {
                 // 如果取消（超时未完成会变为取消）

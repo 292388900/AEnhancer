@@ -19,7 +19,7 @@ import com.baidu.aenhancer.core.processor.ext.Hookable;
 import com.baidu.aenhancer.core.processor.ext.ShortCircuitable;
 import com.baidu.aenhancer.core.processor.ext.SplitProxy;
 import com.baidu.aenhancer.core.processor.ext.Splitable;
-import com.baidu.aenhancer.core.processor.ext.impl.ExecutorFactory;
+import com.baidu.aenhancer.core.processor.ext.impl.ExecPool;
 import com.baidu.aenhancer.entry.Collapse;
 import com.baidu.aenhancer.entry.Enhancer;
 import com.baidu.aenhancer.entry.Enhancer.NULL;
@@ -332,7 +332,7 @@ public class AopContext implements ProcessContext {
     @Override
     public String getGroup() {
         String group = annotation.group();
-        return StringUtils.isEmpty(group) ? ExecutorFactory.SHARED : group;
+        return StringUtils.isEmpty(group) ? ExecPool.SHARED : group;
     }
 
     @Override

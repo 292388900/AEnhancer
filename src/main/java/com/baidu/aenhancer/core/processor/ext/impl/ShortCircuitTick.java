@@ -30,7 +30,7 @@ public class ShortCircuitTick implements Configurable<ShortCircuitSlidingWindowC
 
     private volatile int tick; // 当前的时间戳id
 
-    private ShortCircuitSlidingWindowConfig config;
+    private volatile ShortCircuitSlidingWindowConfig config;
 
     private final ConcurrentHashMap<Method, SlidingWindow<ShortCircuitFigure>> slideMaps;
 
@@ -132,19 +132,14 @@ public class ShortCircuitTick implements Configurable<ShortCircuitSlidingWindowC
         }
         SlidingWindow<ShortCircuitFigure> window = slideMaps.get(method);
         if (null == window) {
-            synchronized (method) {
-                window = slideMaps.get(method);
-                if (null == window) {
-                    ShortCircuitFigure[] scf = new ShortCircuitFigure[config.getWindowSize()];
-                    for (int i = 0; i < config.getWindowSize(); i++) {
-                        scf[i] = new ShortCircuitFigure();
-                    }
-                    window = new SlidingWindow<ShortCircuitFigure>(scf);
-                    slideMaps.put(method, window);
-                }
+            ShortCircuitFigure[] scf = new ShortCircuitFigure[config.getWindowSize()];
+            for (int i = 0; i < config.getWindowSize(); i++) {
+                scf[i] = new ShortCircuitFigure();
             }
+            window = new SlidingWindow<ShortCircuitFigure>(scf);
+            slideMaps.putIfAbsent(method, window);
         }
-        return window;
+        return slideMaps.get(method);
     }
 
     /**

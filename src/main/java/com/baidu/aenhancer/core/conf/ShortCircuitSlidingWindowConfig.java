@@ -1,6 +1,6 @@
 package com.baidu.aenhancer.core.conf;
 
-public class ShortCircuitSlidingWindowConfig {
+public class ShortCircuitSlidingWindowConfig implements Cloneable {
     private int windowSize; // 时间窗口的大小
     private int interval; // millisecond
 

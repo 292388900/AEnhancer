@@ -1,6 +1,5 @@
 package com.baidu.aenhancer.core.processor.ext.impl;
 
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -27,18 +26,14 @@ public class ShortCircuitStateMachineFactory {
         return instance;
     }
 
-    public ShortCircuitStateMachine getStateMachine(Method method, int tick) throws CodingError, IOException {
+    public ShortCircuitStateMachine getStateMachine(Method method, int tick) throws CodingError {
+        if (null == method) {
+            throw new NullPointerException("method is null");
+        }
         ShortCircuitStateMachine scsm = scsmMap.get(method);
         if (null == scsm) {
-            synchronized (method) {
-                scsm = scsmMap.get(method);
-                if (null == scsm) {
-                    // scsm = new ShortCircuitStateMachine(method, tick, 10, 0.85, 4, 50, 0, 1);
-                    scsm = ConfigManager.getInstance().factory(ShortCircuitStateMachine.class, method, tick);
-                    scsmMap.put(method, scsm);
-                }
-            }
+            scsmMap.putIfAbsent(method, ConfigManager.factory(ShortCircuitStateMachine.class, method, tick));
         }
-        return scsm;
+        return scsmMap.get(method);
     }
 }

@@ -11,15 +11,15 @@ public class ShortCircuitTickFactory {
 
     /**
      * @return
-     * @throws IOException 
-     * @throws CodingError 
+     * @throws IOException
+     * @throws CodingError
      */
-    public static ShortCircuitTick getInstance() throws CodingError, IOException {
+    public static ShortCircuitTick getInstance() throws CodingError {
         if (null == instance) {
             synchronized (ShortCircuitTick.class) {
                 if (null == instance) {
                     // 5000毫秒，最大20个窗口
-                    instance = ConfigManager.getInstance().factory(ShortCircuitTick.class);
+                    instance = ConfigManager.factory(ShortCircuitTick.class);
                 }
             }
         }
