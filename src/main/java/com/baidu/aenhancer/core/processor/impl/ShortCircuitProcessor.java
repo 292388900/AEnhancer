@@ -2,6 +2,9 @@ package com.baidu.aenhancer.core.processor.impl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 import com.baidu.aenhancer.core.context.ProcessContext;
 import com.baidu.aenhancer.core.processor.Processor;
@@ -9,12 +12,10 @@ import com.baidu.aenhancer.core.processor.ext.ShortCircuitable;
 import com.baidu.aenhancer.exception.EnhancerRuntimeException;
 import com.baidu.aenhancer.exception.ShortCircuitExcption;
 
+@Component
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class ShortCircuitProcessor extends Processor {
     private Logger logger = LoggerFactory.getLogger(ShortCircuitProcessor.class);
-
-    public ShortCircuitProcessor(Processor decoratee) {
-        super(decoratee);
-    }
 
     @Override
     protected Object process(ProcessContext ctx, Object param) throws Throwable {
@@ -29,23 +30,11 @@ public class ShortCircuitProcessor extends Processor {
             }
         } catch (ShortCircuitExcption e) {
             logger.info("ctxId {} ,ShortCircuitException occurs , type: {}", ctx.getCtxId(), e.getShortCircuitType());
-            switch (e.getShortCircuitType()) {
-                case TASK_REJ:
-                    sct.reject();
-                    break;
-                case TIMEOUT:
-                    sct.timeout();
-                    break;
-                case FAILURE:
-                    sct.error();
-                    break;
-                default:
-                    sct.error();
-            }
+            sct.shortcircuited(e.getShortCircuitType());
             throw new EnhancerRuntimeException(e.getMessage(), e.getCause());
         } catch (Throwable e) {
             logger.info("ctxId {} ,error occurs,short circuit processor mark error() cause: ", ctx.getCtxId(), e);
-            sct.error(); // mark error
+            sct.exception(e);
             throw e;
         }
         logger.info("ctxId {} is shortcircuited ", ctx.getCtxId());

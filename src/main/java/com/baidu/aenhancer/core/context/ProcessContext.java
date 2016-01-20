@@ -2,7 +2,6 @@ package com.baidu.aenhancer.core.context;
 
 import com.baidu.aenhancer.core.processor.ext.CacheProxy;
 import com.baidu.aenhancer.core.processor.ext.FallbackProxy;
-import com.baidu.aenhancer.core.processor.ext.HookProxy;
 import com.baidu.aenhancer.core.processor.ext.ShortCircuitable;
 import com.baidu.aenhancer.core.processor.ext.SplitProxy;
 
@@ -33,10 +32,6 @@ public interface ProcessContext {
     public abstract FallbackProxy getFallBack();
 
     public String getGroup();
-
-    public abstract boolean hook();
-
-    public abstract HookProxy getHook();
 
     public abstract boolean shortcircuit();
 

@@ -78,24 +78,7 @@
 		b.直接实现相应的XXXProxy,其中有相应的接口
    
    *2、开发新的processor：(使用@Hook来获取完整的扩展能力)*  
-   其实现在CodeBase中实现的这些逻辑也是使用默认的Hooker对象，hook到切面上实现的。所以如果用户想开发实现更丰富的功能，可以直接实现一个Hookable接口（这个接口的意义基本和Spring的ApplicationContextAware是一样的，使得你的类可以获得当前执行上下文的引用，所以不关心上下文的话，@Override的方法实现为空即可），然后实现任意的方法并用@Hook修饰。那么当程序执行到这个切面的时候便会Hook到用户的方法中，用户便可以自由发挥，定义新的processor，任意改变processor的顺序都可以
-
-	class UserHook implements Hookable {
-		@Override
-		public void init(ProceedingJoinPoint jp, ApplicationContext context) throws CodingError {
-						// ...
-		}
-                   
-		@Override
-		public void beforeProcess(ProcessContext ctx, Processor currentProcess) {
-						// ...
-		}
-                    
-		@Hook
-		public AnyType anyName(AnyParam p){
-                     	// ...
-		}
-	}
+   其在CodeBase中，提供了钩子：HookProcessor。所以如果用户想开发实现更丰富的功能，可以直接实现一个HookProcessor，这个processor在所有processor之前调用，用户可以自由发挥，定义新的processor，任意改变processor的顺序都可以
 	
    *3、Fork此项目，自己修改源代码各个实现吧！*
    
@@ -129,9 +112,10 @@
 ~~6、短路：流量控制，错误短路。~~ Done @1.16 by xusoda  
 ~~7、所有自有实现都使用插件化~~ Done @1.15 by xusoda  
 8、逻辑流图  
-9、将所有对象的new改为抽象工厂（自己的DI容器）创建，与Spring整合与依赖分离   
+~~9、改为spring加载processor~~ Done @1.20 by xusoda     
 ~~10、使得配置可以reload，或者说override~~ Done @1.19 by xusoda  
 ~~11、使用静态织入的方式，不用对Spring依赖，只对Aspectj依赖~~ Pending @1.17 by xusoda  
 ~~12、短路分method控制，线程池分group控制~~ Done @1.20 by xusoda  
 ~~13、框架模块失效控制?~~ Discard（由实现类容错） @1.17 by xusoda   
-14、使用信号量模拟多个线程池隔离  
+14、使用信号量模拟多个线程池隔离
+15、信号以及数据传输到Master的中间件  

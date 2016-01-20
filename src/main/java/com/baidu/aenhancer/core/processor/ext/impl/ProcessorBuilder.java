@@ -1,9 +1,15 @@
 package com.baidu.aenhancer.core.processor.ext.impl;
 
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
+
 import com.baidu.aenhancer.core.processor.Processor;
 import com.baidu.aenhancer.core.processor.impl.AsyncSplitNTimeoutProcessor;
 import com.baidu.aenhancer.core.processor.impl.CacheProcessor;
 import com.baidu.aenhancer.core.processor.impl.FallBackProcessor;
+import com.baidu.aenhancer.core.processor.impl.HookProcessor;
 import com.baidu.aenhancer.core.processor.impl.PlainInvokProcessor;
 import com.baidu.aenhancer.core.processor.impl.RetryProcessor;
 import com.baidu.aenhancer.core.processor.impl.ShortCircuitProcessor;
@@ -16,6 +22,8 @@ import com.baidu.aenhancer.core.processor.impl.SyncTimeoutProcessor;
  * @author xushuda
  *
  */
+@Component
+@Scope("prototype")
 public class ProcessorBuilder {
 
     private boolean cache = false;
@@ -25,6 +33,7 @@ public class ProcessorBuilder {
     private boolean parallel = false;
     private boolean fallback = false;
     private boolean shortcircuit = false;
+    private ApplicationContext ctx;
 
     public ProcessorBuilder isShortcircuit(boolean shortcircuit) {
         this.shortcircuit = shortcircuit;
@@ -86,41 +95,47 @@ public class ProcessorBuilder {
      * @return
      */
     public Processor build() {
-        Processor processor = new PlainInvokProcessor(null);
+        Processor processor = ctx.getBean(PlainInvokProcessor.class);
         // 重试
         if (retry) {
-            processor = new RetryProcessor(processor);
+            processor = ctx.getBean(RetryProcessor.class).hookee(processor);
         }
         if (parallel) {
             // split and timeout
             if (timeout || split) {
-                processor = new AsyncSplitNTimeoutProcessor(processor);
+                processor = ctx.getBean(AsyncSplitNTimeoutProcessor.class).hookee(processor);
             }
         } else {
             if (timeout) {
                 // timeout
-                processor = new SyncTimeoutProcessor(processor);
+                processor = ctx.getBean(SyncTimeoutProcessor.class).hookee(processor);
             }
             if (split) {
                 // split
-                processor = new SyncSplitProcessor(processor);
+                processor = ctx.getBean(SyncSplitProcessor.class).hookee(processor);
             }
         }
 
         // shortcircuit
         if (shortcircuit) {
-            processor = new ShortCircuitProcessor(processor);
+            processor = ctx.getBean(ShortCircuitProcessor.class).hookee(processor);
         }
 
         // cache
         if (cache) {
-            processor = new CacheProcessor(processor);
+            processor = ctx.getBean(CacheProcessor.class).hookee(processor);
         }
 
         // fallback
         if (fallback) {
-            processor = new FallBackProcessor(processor);
+            processor = ctx.getBean(FallBackProcessor.class).hookee(processor);
         }
-        return processor;
+
+        return ctx.getBean(HookProcessor.class).hookee(processor);
+    }
+
+    public ProcessorBuilder setCtx(ApplicationContext ctx) throws BeansException {
+        this.ctx = ctx;
+        return this;
     }
 }

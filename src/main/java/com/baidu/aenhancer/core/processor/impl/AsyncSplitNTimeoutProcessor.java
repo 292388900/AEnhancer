@@ -8,6 +8,9 @@ import java.util.concurrent.RejectedExecutionException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 import com.baidu.aenhancer.core.context.ProcessContext;
 import com.baidu.aenhancer.core.context.ShortCircuitType;
@@ -24,11 +27,9 @@ import com.baidu.aenhancer.exception.ShortCircuitExcption;
  * @author xushuda
  *
  */
+@Component
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class AsyncSplitNTimeoutProcessor extends Processor {
-
-    public AsyncSplitNTimeoutProcessor(Processor decoratee) {
-        super(decoratee);
-    }
 
     private final static Logger logger = LoggerFactory.getLogger(AsyncSplitNTimeoutProcessor.class);
 

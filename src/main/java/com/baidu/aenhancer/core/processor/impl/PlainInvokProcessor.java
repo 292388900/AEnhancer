@@ -2,6 +2,8 @@ package com.baidu.aenhancer.core.processor.impl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 import com.baidu.aenhancer.core.context.ProcessContext;
 import com.baidu.aenhancer.core.processor.Processor;
@@ -13,7 +15,12 @@ import com.baidu.aenhancer.exception.UnexpectedStateException;
  * @author xushuda
  *
  */
+@Component
+@Scope("prototype")
 public class PlainInvokProcessor extends Processor {
+    public PlainInvokProcessor(){
+        super(null);
+    }
     public PlainInvokProcessor(Processor decoratee) {
         super(decoratee);
     }
@@ -21,7 +28,7 @@ public class PlainInvokProcessor extends Processor {
     private Logger logger = LoggerFactory.getLogger(PlainInvokProcessor.class);
 
     @Override
-    public Object process(ProcessContext ctx, Object p) throws Throwable {
+    protected Object process(ProcessContext ctx, Object p) throws Throwable {
         // current start
         logger.info("ctxId: {} invok the actual method", ctx.getCtxId());
         Object[] args = (Object[]) p;
@@ -30,7 +37,7 @@ public class PlainInvokProcessor extends Processor {
     }
 
     @Override
-    public void preCheck(ProcessContext ctx, Object param) {
+    protected void preCheck(ProcessContext ctx, Object param) {
         if (decoratee != null) {
             throw new UnexpectedStateException("final processor can't decorate other processor");
         }

@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.springframework.context.ApplicationContext;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import com.baidu.aenhancer.core.context.ProcessContext;
@@ -24,7 +25,7 @@ import com.baidu.aenhancer.ext.impl.aggr.Aggr;
 import com.baidu.aenhancer.ext.impl.aggr.AggrCacher;
 import com.baidu.aenhancer.ext.impl.aggr.AggrSpliter;
 
-@Service
+@Service("bean1")
 public class BeanMock {
     @Enhancer
     public Integer testGet(Integer x) {
@@ -120,7 +121,7 @@ public class BeanMock {
         return end + start;
     }
 
-    public static class CustomSpliter implements Splitable {
+   public static class CustomSpliter implements Splitable {
 
         @Override
         public void init(ProceedingJoinPoint jp, ApplicationContext context) throws CodingError {

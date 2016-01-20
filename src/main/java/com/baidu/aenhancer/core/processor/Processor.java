@@ -14,6 +14,10 @@ public abstract class Processor {
      */
     protected Processor decoratee;
 
+    public Processor() {
+        this.decoratee = null;
+    }
+
     public Processor(Processor decoratee) {
         this.decoratee = decoratee;
     }

@@ -7,6 +7,7 @@ import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.context.ApplicationContext;
 
 import com.baidu.aenhancer.core.context.ProcessContext;
+import com.baidu.aenhancer.core.context.ShortCircuitType;
 import com.baidu.aenhancer.core.processor.Processor;
 import com.baidu.aenhancer.core.processor.ext.ShortCircuitable;
 import com.baidu.aenhancer.exception.CodingError;
@@ -44,20 +45,17 @@ public class DefaultShortCircuit implements ShortCircuitable {
                 sct.getErrors(method, calSize), sct.getRejections(method, calSize), sct.getTick());
     }
 
-    @Override
     public void reject() {
         sct.reject(method);
         scsm.notify(false, sct.getTick());
     }
 
-    @Override
     public void timeout() {
         sct.timeout(method);
         scsm.notify(false, sct.getTick());
 
     }
 
-    @Override
     public void error() {
         sct.error(method);
         scsm.notify(false, sct.getTick());
@@ -67,6 +65,33 @@ public class DefaultShortCircuit implements ShortCircuitable {
     public void success() {
         sct.success(method);
         scsm.notify(true, sct.getTick());
+    }
+
+    @Override
+    public void shortcircuited(ShortCircuitType shortCircuitType) {
+        if (null == shortCircuitType) {
+            error();
+            return;
+        }
+        switch (shortCircuitType) {
+            case TASK_REJ:
+                reject();
+                break;
+            case TIMEOUT:
+                timeout();
+                break;
+            case FAILURE:
+                error();
+                break;
+            default:
+                error();
+        }
+
+    }
+
+    @Override
+    public void exception(Throwable throwalbe) {
+        error();
     }
 
 }

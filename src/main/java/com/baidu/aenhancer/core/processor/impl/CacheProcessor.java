@@ -2,16 +2,16 @@ package com.baidu.aenhancer.core.processor.impl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 import com.baidu.aenhancer.core.context.ProcessContext;
 import com.baidu.aenhancer.core.processor.Processor;
 import com.baidu.aenhancer.core.processor.ext.CacheProxy;
-
+@Component
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class CacheProcessor extends Processor {
-
-    public CacheProcessor(Processor decoratee) {
-        super(decoratee);
-    }
 
     private final static Logger logger = LoggerFactory.getLogger(CacheProcessor.class);
 

@@ -15,6 +15,7 @@
 	<bean
 		class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor" />
 	<bean id="aop" class="com.baidu.aenhancer.entry.EnhancerAspect"></bean>
+	<bean id="entry" class="com.baidu.aenhancer.BeanMock" />
 
 	<bean name="DefaultCacheDriver" class="com.baidu.aenhancer.RedisHa" />
 	<bean name="NopDriver" class="com.baidu.aenhancer.ext.impl.aggr.NopCacheDriver" />

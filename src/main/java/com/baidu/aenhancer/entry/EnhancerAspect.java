@@ -12,7 +12,7 @@ import org.springframework.context.ApplicationContextAware;
 import com.baidu.aenhancer.core.context.AopContext;
 import com.baidu.aenhancer.core.context.ProcessContext;
 import com.baidu.aenhancer.core.processor.Processor;
-import com.baidu.aenhancer.core.processor.impl.InceptProcessor;
+import com.baidu.aenhancer.core.processor.ext.impl.ProcessorBuilder;
 import com.baidu.aenhancer.exception.EnhancerCheckedException;
 import com.baidu.aenhancer.exception.EnhancerRuntimeException;
 import com.baidu.aenhancer.exception.ShortCircuitExcption;
@@ -45,11 +45,21 @@ public class EnhancerAspect implements ApplicationContextAware {
         ProcessContext ctx = null;
         // 真正的数据处理阶段
         try {
-            // 这个起始Processor其实不引用别的Processor，仅仅调用了上下文中的hook
-            Processor initd = new InceptProcessor(null);
             ctx = new AopContext(scheduled, jp, applicationContext);
             logger.info("ctx_id: {} start : \"{}\"", ctx.getCtxId(), jp.getSignature().toLongString());
-            Object ret = initd.doo(ctx, ctx.getArgs());
+            ProcessorBuilder builder = applicationContext.getBean(ProcessorBuilder.class)//
+                    .setCtx(applicationContext)//
+                    .isParallel(ctx.parallel())//
+                    .isCache(ctx.cache())//
+                    .isRetry(ctx.getRetry() > 0)//
+                    .isTimeout(ctx.getTimeout() > 0)//
+                    .isFallback(ctx.fallback())//
+                    .isSplit(ctx.split())//
+                    .isShortcircuit(ctx.shortcircuit());
+            // build 处理器对象
+            Processor processor = builder.build();
+            // 处理
+            Object ret = processor.doo(ctx, ctx.getArgs());
             logger.info("ctx_id: {} finished, ret: \"{}\"", ctx.getCtxId(), ret);
             return ret;
         } catch (ShortCircuitExcption e) {
@@ -63,8 +73,8 @@ public class EnhancerAspect implements ApplicationContextAware {
             return jp.proceed(jp.getArgs());
         } catch (RuntimeException rtExp) {
             // swallow the runtime exception
-            logger.error("ctx_id: {} , runtime exception occurs in cache aop , caused by: ", ctx != null ? ctx.getCtxId() : 0,
-                    rtExp);
+            logger.error("ctx_id: {} , runtime exception occurs in cache aop , caused by: ",
+                    ctx != null ? ctx.getCtxId() : 0, rtExp);
             throw rtExp;
         }
     }

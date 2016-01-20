@@ -5,6 +5,9 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 import com.baidu.aenhancer.core.context.ProcessContext;
 import com.baidu.aenhancer.core.processor.Processor;
@@ -17,11 +20,9 @@ import com.baidu.aenhancer.exception.UnexpectedStateException;
  * @author xushuda
  *
  */
+@Component
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class SyncSplitProcessor extends Processor {
-
-    public SyncSplitProcessor(Processor decoratee) {
-        super(decoratee);
-    }
 
     private Logger logger = LoggerFactory.getLogger(SyncSplitProcessor.class);
 

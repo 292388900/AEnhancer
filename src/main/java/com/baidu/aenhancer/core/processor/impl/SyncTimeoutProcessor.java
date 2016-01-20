@@ -8,6 +8,9 @@ import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 import com.baidu.aenhancer.core.context.ProcessContext;
 import com.baidu.aenhancer.core.context.ShortCircuitType;
@@ -24,11 +27,9 @@ import com.baidu.aenhancer.exception.UnexpectedStateException;
  * @author xushuda
  *
  */
+@Component
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class SyncTimeoutProcessor extends Processor {
-
-    public SyncTimeoutProcessor(Processor decoratee) {
-        super(decoratee);
-    }
 
     private final static Logger logger = LoggerFactory.getLogger(SyncTimeoutProcessor.class);
 
@@ -74,8 +75,6 @@ public class SyncTimeoutProcessor extends Processor {
 
     @Override
     protected void postCheck(ProcessContext ctx, Object ret) {
-        // TODO Auto-generated method stub
-
     }
 
 }

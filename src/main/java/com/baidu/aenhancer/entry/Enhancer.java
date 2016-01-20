@@ -8,10 +8,8 @@ import java.lang.annotation.Target;
 
 import com.baidu.aenhancer.core.processor.ext.CacheProxy;
 import com.baidu.aenhancer.core.processor.ext.Fallbackable;
-import com.baidu.aenhancer.core.processor.ext.Hookable;
 import com.baidu.aenhancer.core.processor.ext.ShortCircuitable;
 import com.baidu.aenhancer.core.processor.ext.Splitable;
-import com.baidu.aenhancer.core.processor.ext.impl.DefaultHook;
 import com.baidu.aenhancer.core.processor.ext.impl.DefaultShortCircuit;
 
 @Target({ ElementType.METHOD })
@@ -55,13 +53,6 @@ public @interface Enhancer {
     Class<? extends Splitable> spliter() default NULL.class;
 
     Class<? extends Fallbackable> fallback() default NULL.class;
-
-    /**
-     * 默认Hookable的实现
-     * 
-     * @return
-     */
-    Class<? extends Hookable> hook() default DefaultHook.class;
 
     /**
      * 默认全局设置

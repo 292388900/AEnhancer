@@ -13,7 +13,10 @@ import com.baidu.aenhancer.exception.CodingError;
 
 public class Main {
     static ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
-    final static BeanMock entry = context.getBean(BeanMock.class);
+    final static BeanMock entry1 = context.getBean("bean1", BeanMock.class);
+    final static BeanMock entry2 = context.getBean("bean2", BeanMock.class);
+
+    // final static BeanMock entry3 = context.getBean("bean2", BeanMock.class);
 
     public static void main(String[] args) {
 
@@ -21,8 +24,9 @@ public class Main {
         // });
         // entry.get(5);
         // entry.testFallback();
-        // entry.costomSplit(1, 2);
-        testFac();
+        entry2.costomSplit(1, 2);
+
+        // testFac();
 
     }
 
@@ -48,7 +52,7 @@ public class Main {
             @Override
             public void run() {
                 try {
-                    Method m = entry.getClass().getMethod("getInt");
+                    Method m = entry1.getClass().getMethod("getInt");
                     synchronized (m) {
                         System.out.println("start");
                         Thread.sleep(5000);
@@ -72,7 +76,7 @@ public class Main {
             @Override
             public void run() {
                 try {
-                    Method m = entry.getClass().getMethod("getInt");
+                    Method m = entry1.getClass().getMethod("getInt");
                     synchronized (m) {
                         System.out.println("start");
                         Thread.sleep(5000);
