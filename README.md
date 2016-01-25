@@ -55,14 +55,14 @@
 		(PS：@Aggr是默认实现所定义的注解，用户的实现也能定义任意注解，自行解析）
 		@Aggr(sequential = true, batchSize = 1)
     	@Enhancer( //
-        	timeout = 100, // 超时时间
+    	        timeout = 100, // 超时时间
            	cacher = "aggrCache", // 缓存策略：按集合对象中的元素缓存
+           	fallback = "ReturnNull", // 降级策略
+                retry = 3 // 异常重试次数3
            	@Parallel(
            		spliter="aggr", // 拆分成多次调用的策略：按集合元素个数拆分
-    			group = "ServiceGroupA", // 所属的组
-    			)
-            	fallback = "ReturnNull", // 降级策略
-            	retry = 3 // 异常重试次数3
+           		group = "ServiceGroupA" // 所属的组
+           		)
     	)
     	public List<TaskResult> runTask(String[] args, Object paramX)
   
