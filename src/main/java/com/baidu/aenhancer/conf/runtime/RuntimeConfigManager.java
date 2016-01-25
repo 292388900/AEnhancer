@@ -1,4 +1,4 @@
-package com.baidu.aenhancer.core.conf;
+package com.baidu.aenhancer.conf.runtime;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,9 +33,9 @@ import com.baidu.aenhancer.exception.CodingError;
  * @author xushuda
  *
  */
-public class ConfigManager {
+public class RuntimeConfigManager {
 
-    private final static Logger logger = LoggerFactory.getLogger(ConfigManager.class);
+    private final static Logger logger = LoggerFactory.getLogger(RuntimeConfigManager.class);
     private static final String DEFAULT_CONFIG_FILE_Name = "/enhancer.properties";
     private static final ConcurrentHashMap<String, ConfigSet> fileConfMap = new ConcurrentHashMap<String, ConfigSet>();
     static {
@@ -272,7 +272,7 @@ public class ConfigManager {
         private void init(Properties props, Map<String, Pattern> patterns, String fileName) {
             InputStream is = null;
             try {
-                is = ConfigManager.class.getResourceAsStream(fileName);
+                is = RuntimeConfigManager.class.getResourceAsStream(fileName);
                 props.load(is);
                 Enumeration<?> e = props.propertyNames();
                 while (e.hasMoreElements()) {

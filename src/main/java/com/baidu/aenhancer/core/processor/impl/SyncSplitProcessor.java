@@ -20,7 +20,7 @@ import com.baidu.aenhancer.exception.UnexpectedStateException;
  * @author xushuda
  *
  */
-@Component
+@Component("__defaultSyncSplit")
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class SyncSplitProcessor extends Processor {
 
@@ -42,7 +42,7 @@ public class SyncSplitProcessor extends Processor {
         // 结果集合
         List<Object> results = new ArrayList<Object>();
         for (Object[] param : params) {
-            logger.info("ctx_id: {} get splited param as : {}", ctx.getCtxId(), param);
+            logger.info("ctx_id: {} get splited param: {}", ctx.getCtxId(), param);
             // 从下一个processor获取结果，如果对于Async的方式，可能是返回一个Future对象
             Object rawResult = decoratee.doo(ctx, param);
             // 可能为null

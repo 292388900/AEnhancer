@@ -6,12 +6,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import com.baidu.aenhancer.core.processor.ext.CacheProxy;
-import com.baidu.aenhancer.core.processor.ext.Fallbackable;
-import com.baidu.aenhancer.core.processor.ext.ShortCircuitable;
-import com.baidu.aenhancer.core.processor.ext.Splitable;
-import com.baidu.aenhancer.core.processor.ext.impl.DefaultShortCircuit;
-
 @Target({ ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
@@ -35,34 +29,31 @@ public @interface Enhancer {
     int timeout() default 0;
 
     /**
-     * 是否可用并行
+     * 并行控制 SplitProxy
      * 
      * @return
      */
-    boolean parallel() default false;
+    Parallel parallel() default @Parallel();
 
     /**
-     * 所属的“组”
+     * 降级函数的bean，或者注解的名字 FallbackProxy
      * 
      * @return
      */
-    String group() default "";
-
-    Class<? extends CacheProxy> cacher() default NULL.class;
-
-    Class<? extends Splitable> spliter() default NULL.class;
-
-    Class<? extends Fallbackable> fallback() default NULL.class;
+    String fallback() default "";
 
     /**
-     * 默认全局设置
+     * cacher的bean CacherProxy
      * 
      * @return
      */
-    Class<? extends ShortCircuitable> shortcircuit() default DefaultShortCircuit.class;
+    String cacher() default "";
 
-    // 代表null
-    interface NULL extends Splitable, CacheProxy, Fallbackable, ShortCircuitable {
-    }
+    /**
+     * 短路控制的bean ShortCircuitProxy
+     * 
+     * @return
+     */
+    String shortcircuit() default "circuit";
 
 }

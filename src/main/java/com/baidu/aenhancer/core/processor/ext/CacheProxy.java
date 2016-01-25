@@ -12,7 +12,7 @@ package com.baidu.aenhancer.core.processor.ext;
  * @author xushuda
  *
  */
-public interface CacheProxy extends Cacheable {
+public interface CacheProxy extends Contextural {
 
     /**
      * 先从cache中读取,

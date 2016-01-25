@@ -7,8 +7,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.baidu.aenhancer.core.conf.Configurable;
-import com.baidu.aenhancer.core.conf.ShortCircuitStateMachineConfig;
+import com.baidu.aenhancer.conf.runtime.Configurable;
+import com.baidu.aenhancer.conf.runtime.ShortCircuitStateMachineConfig;
 import com.baidu.aenhancer.exception.IllegalParamException;
 
 /**

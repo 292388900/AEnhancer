@@ -1,4 +1,4 @@
-package com.baidu.aenhancer.core.conf;
+package com.baidu.aenhancer.conf.runtime;
 
 public class ShortCircuitStateMachineConfig implements Cloneable {
     private int leastSample; // 最小样本个数

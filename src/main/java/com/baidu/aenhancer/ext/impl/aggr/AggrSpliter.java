@@ -7,7 +7,10 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 import com.baidu.aenhancer.core.context.ProcessContext;
 import com.baidu.aenhancer.core.processor.Processor;
@@ -15,6 +18,8 @@ import com.baidu.aenhancer.core.processor.ext.SplitProxy;
 import com.baidu.aenhancer.exception.CodingError;
 import com.baidu.aenhancer.exception.EnhancerRuntimeException;
 
+@Component("aggr")
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public final class AggrSpliter implements SplitProxy {
     private static final Logger logger = LoggerFactory.getLogger(AggrSpliter.class);
     private AggrSignatureInfo signature;

@@ -2,7 +2,7 @@ package com.baidu.aenhancer.core.processor.ext;
 
 import java.util.List;
 
-public interface SplitProxy extends Splitable {
+public interface SplitProxy extends Contextural {
     /**
      * 将多次调用的结果合并
      * 

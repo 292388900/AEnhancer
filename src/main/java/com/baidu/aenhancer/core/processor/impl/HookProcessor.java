@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 import com.baidu.aenhancer.core.context.ProcessContext;
 import com.baidu.aenhancer.core.processor.Processor;
 
-@Component
+@Component("__defaultHook")
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class HookProcessor extends Processor {
 

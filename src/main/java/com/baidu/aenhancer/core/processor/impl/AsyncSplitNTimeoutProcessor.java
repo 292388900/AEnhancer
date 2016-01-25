@@ -27,7 +27,7 @@ import com.baidu.aenhancer.exception.ShortCircuitExcption;
  * @author xushuda
  *
  */
-@Component
+@Component("__defaultAsync")
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class AsyncSplitNTimeoutProcessor extends Processor {
 

@@ -8,18 +8,18 @@ import org.springframework.stereotype.Component;
 
 import com.baidu.aenhancer.core.context.ProcessContext;
 import com.baidu.aenhancer.core.processor.Processor;
-import com.baidu.aenhancer.core.processor.ext.ShortCircuitable;
+import com.baidu.aenhancer.core.processor.ext.ShortCircuitProxy;
 import com.baidu.aenhancer.exception.EnhancerRuntimeException;
 import com.baidu.aenhancer.exception.ShortCircuitExcption;
 
-@Component
+@Component("__defaultShortCircuit")
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class ShortCircuitProcessor extends Processor {
     private Logger logger = LoggerFactory.getLogger(ShortCircuitProcessor.class);
 
     @Override
     protected Object process(ProcessContext ctx, Object param) throws Throwable {
-        ShortCircuitable sct = ctx.getShortCircuit();
+        ShortCircuitProxy sct = ctx.getShortCircuit();
         sct.beforeProcess(ctx, this);
         try {
             // 不在此短路的话则调用

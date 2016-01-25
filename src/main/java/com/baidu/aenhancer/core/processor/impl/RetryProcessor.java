@@ -10,7 +10,7 @@ import com.baidu.aenhancer.core.context.ProcessContext;
 import com.baidu.aenhancer.core.processor.Processor;
 import com.baidu.aenhancer.exception.UnexpectedStateException;
 
-@Component
+@Component("__defaultRetry")
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class RetryProcessor extends Processor {
 

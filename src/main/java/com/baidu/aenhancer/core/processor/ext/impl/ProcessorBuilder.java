@@ -95,43 +95,64 @@ public class ProcessorBuilder {
      * @return
      */
     public Processor build() {
-        Processor processor = ctx.getBean(PlainInvokProcessor.class);
+        Processor processor = getBean(PlainInvokProcessor.class);
         // 重试
         if (retry) {
-            processor = ctx.getBean(RetryProcessor.class).hookee(processor);
+            processor = getBean(RetryProcessor.class).hookee(processor);
         }
         if (parallel) {
             // split and timeout
             if (timeout || split) {
-                processor = ctx.getBean(AsyncSplitNTimeoutProcessor.class).hookee(processor);
+                processor = getBean(AsyncSplitNTimeoutProcessor.class).hookee(processor);
             }
         } else {
             if (timeout) {
                 // timeout
-                processor = ctx.getBean(SyncTimeoutProcessor.class).hookee(processor);
+                processor = getBean(SyncTimeoutProcessor.class).hookee(processor);
             }
             if (split) {
                 // split
-                processor = ctx.getBean(SyncSplitProcessor.class).hookee(processor);
+                processor = getBean(SyncSplitProcessor.class).hookee(processor);
             }
         }
 
         // shortcircuit
         if (shortcircuit) {
-            processor = ctx.getBean(ShortCircuitProcessor.class).hookee(processor);
+            processor = getBean(ShortCircuitProcessor.class).hookee(processor);
         }
 
         // cache
         if (cache) {
-            processor = ctx.getBean(CacheProcessor.class).hookee(processor);
+            processor = getBean(CacheProcessor.class).hookee(processor);
         }
 
         // fallback
         if (fallback) {
-            processor = ctx.getBean(FallBackProcessor.class).hookee(processor);
+            processor = getBean(FallBackProcessor.class).hookee(processor);
         }
+        
+        // hook processor是最先被调用的
+        return getBean(HookProcessor.class).hookee(processor);
+    }
 
-        return ctx.getBean(HookProcessor.class).hookee(processor);
+    // TODO
+    private Processor getBean(Class<? extends Processor> clazz) {
+        String[] beanNames = ctx.getBeanNamesForType(clazz);
+        if (beanNames == null || beanNames.length == 0) {
+            throw new NullPointerException(" false xml, no bean found for  " + clazz);
+        }
+        // 只有一个符合，直接返回
+        if (beanNames.length == 1) {
+            return ctx.getBean(beanNames[0], clazz);
+        }
+        // 有多个符合，不使用默认
+        for (String beanName : beanNames) {
+            if (!beanName.startsWith("__default")) {
+                return ctx.getBean(beanName, clazz);
+            }
+        }
+        throw new NullPointerException("should not reach here, or u have false applicationContext.xml configuration "
+                + clazz);
     }
 
     public ProcessorBuilder setCtx(ApplicationContext ctx) throws BeansException {

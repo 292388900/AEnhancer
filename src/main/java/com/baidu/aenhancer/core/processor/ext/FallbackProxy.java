@@ -1,6 +1,9 @@
 package com.baidu.aenhancer.core.processor.ext;
 
-public interface FallbackProxy extends Fallbackable {
+import com.baidu.aenhancer.entry.Fallback;
 
+public interface FallbackProxy extends Contextural {
+
+    @Fallback
     public Object fallback(Object[] param);
 }

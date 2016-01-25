@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.stereotype.Component;
 
 import com.baidu.aenhancer.core.context.AopContext;
 import com.baidu.aenhancer.core.context.ProcessContext;
@@ -24,6 +25,7 @@ import com.baidu.aenhancer.exception.ShortCircuitExcption;
  *
  */
 @Aspect
+@Component
 public class EnhancerAspect implements ApplicationContextAware {
 
     private static final Logger logger = LoggerFactory.getLogger(EnhancerAspect.class);
@@ -68,6 +70,7 @@ public class EnhancerAspect implements ApplicationContextAware {
             throw new EnhancerRuntimeException("short circuit not caught by short circuit state machine: "
                     + e.getShortCircuitType());
         } catch (EnhancerCheckedException e) {
+            // should not reach here
             logger.error(" ctxId: {} ,method: \"{}\",revive fatal error which caused by: ",
                     ctx != null ? ctx.getCtxId() : 0, jp.getSignature().toLongString(), e);
             return jp.proceed(jp.getArgs());

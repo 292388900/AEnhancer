@@ -3,36 +3,21 @@ package com.baidu.aenhancer.core.processor.ext.impl;
 import java.lang.reflect.Method;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.baidu.aenhancer.core.conf.ConfigManager;
+import com.baidu.aenhancer.conf.runtime.RuntimeConfigManager;
 import com.baidu.aenhancer.exception.CodingError;
 
 public class ShortCircuitStateMachineFactory {
-    private ConcurrentHashMap<Method, ShortCircuitStateMachine> scsmMap;
-
-    private ShortCircuitStateMachineFactory() {
+    private static ConcurrentHashMap<Method, ShortCircuitStateMachine> scsmMap;
+    static {
         scsmMap = new ConcurrentHashMap<Method, ShortCircuitStateMachine>();
     }
 
-    private volatile static ShortCircuitStateMachineFactory instance;
-
-    public static ShortCircuitStateMachineFactory getInstance() {
-        if (null == instance) {
-            synchronized (ShortCircuitStateMachineFactory.class) {
-                if (null == instance) {
-                    instance = new ShortCircuitStateMachineFactory();
-                }
-            }
-        }
-        return instance;
-    }
-
-    public ShortCircuitStateMachine getStateMachine(Method method, int tick) throws CodingError {
+    public static ShortCircuitStateMachine getStateMachine(Method method, int tick) throws CodingError {
         if (null == method) {
             throw new NullPointerException("method is null");
         }
-        ShortCircuitStateMachine scsm = scsmMap.get(method);
-        if (null == scsm) {
-            scsmMap.putIfAbsent(method, ConfigManager.factory(ShortCircuitStateMachine.class, method, tick));
+        if (null == scsmMap.get(method)) {
+            scsmMap.putIfAbsent(method, RuntimeConfigManager.factory(ShortCircuitStateMachine.class, method, tick));
         }
         return scsmMap.get(method);
     }

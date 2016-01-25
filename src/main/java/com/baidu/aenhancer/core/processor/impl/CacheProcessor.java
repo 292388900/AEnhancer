@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import com.baidu.aenhancer.core.context.ProcessContext;
 import com.baidu.aenhancer.core.processor.Processor;
 import com.baidu.aenhancer.core.processor.ext.CacheProxy;
-@Component
+@Component("__defaultCache")
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class CacheProcessor extends Processor {
 

@@ -5,14 +5,18 @@ import java.lang.reflect.Method;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 import com.baidu.aenhancer.core.context.ProcessContext;
 import com.baidu.aenhancer.core.context.ShortCircuitType;
 import com.baidu.aenhancer.core.processor.Processor;
-import com.baidu.aenhancer.core.processor.ext.ShortCircuitable;
+import com.baidu.aenhancer.core.processor.ext.ShortCircuitProxy;
 import com.baidu.aenhancer.exception.CodingError;
 
-public class DefaultShortCircuit implements ShortCircuitable {
+@Component("circuit")
+@Scope("prototype")
+public class DefaultShortCircuit implements ShortCircuitProxy {
 
     private Method method;
 
@@ -29,14 +33,13 @@ public class DefaultShortCircuit implements ShortCircuitable {
     public void init(ProceedingJoinPoint jp, ApplicationContext context) throws CodingError {
         // 这个signature是父类的signature
         method = ((MethodSignature) jp.getSignature()).getMethod();
-        sct = ShortCircuitTickFactory.getInstance();
-        scsm = ShortCircuitStateMachineFactory.getInstance().getStateMachine(method, sct.getTick());
+        sct = ShortCircuitTickFactory.getTick();
+        scsm = ShortCircuitStateMachineFactory.getStateMachine(method, sct.getTick());
         calSize = scsm.getAggregationSize();
     }
 
     @Override
     public void beforeProcess(ProcessContext ctx, Processor currentProcess) {
-        // TODO Auto-generated method stub
     }
 
     @Override
@@ -53,7 +56,6 @@ public class DefaultShortCircuit implements ShortCircuitable {
     public void timeout() {
         sct.timeout(method);
         scsm.notify(false, sct.getTick());
-
     }
 
     public void error() {
@@ -86,7 +88,6 @@ public class DefaultShortCircuit implements ShortCircuitable {
             default:
                 error();
         }
-
     }
 
     @Override

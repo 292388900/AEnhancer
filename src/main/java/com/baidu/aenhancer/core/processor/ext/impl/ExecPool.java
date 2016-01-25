@@ -17,8 +17,8 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.baidu.aenhancer.core.conf.Configurable;
-import com.baidu.aenhancer.core.conf.ExecutorPoolConfig;
+import com.baidu.aenhancer.conf.runtime.Configurable;
+import com.baidu.aenhancer.conf.runtime.ExecutorPoolConfig;
 import com.baidu.aenhancer.core.context.ProcessContext;
 import com.baidu.aenhancer.core.processor.Processor;
 

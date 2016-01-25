@@ -12,9 +12,11 @@ import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Scope;
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
+import org.springframework.stereotype.Component;
 
 import com.baidu.aenhancer.core.context.ProcessContext;
 import com.baidu.aenhancer.core.processor.Processor;
@@ -29,6 +31,8 @@ import com.baidu.aenhancer.exception.UnexpectedStateException;
  * @author xushuda
  *
  */
+@Component("aggrCache")
+@Scope("prototype")
 public class AggrCacher implements CacheProxy {
 
     private static final String FIXED = "FIXED";
@@ -65,7 +69,7 @@ public class AggrCacher implements CacheProxy {
         signature = AggrSignatureParser.parseSignature(jp);
         try {
             aggr =
-                    (jp.getTarget().getClass().getDeclaredMethod(jp.getSignature().getName(),
+                    (jp.getTarget().getClass().getMethod(jp.getSignature().getName(),
                             ((MethodSignature) jp.getSignature()).getParameterTypes())).getAnnotation(Aggr.class);
         } catch (Exception e) {
             throw new CodingError("error get signature, cause :", e);

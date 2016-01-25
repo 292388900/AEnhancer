@@ -2,7 +2,7 @@ package com.baidu.aenhancer.core.context;
 
 import com.baidu.aenhancer.core.processor.ext.CacheProxy;
 import com.baidu.aenhancer.core.processor.ext.FallbackProxy;
-import com.baidu.aenhancer.core.processor.ext.ShortCircuitable;
+import com.baidu.aenhancer.core.processor.ext.ShortCircuitProxy;
 import com.baidu.aenhancer.core.processor.ext.SplitProxy;
 
 public interface ProcessContext {
@@ -35,5 +35,5 @@ public interface ProcessContext {
 
     public abstract boolean shortcircuit();
 
-    public abstract ShortCircuitable getShortCircuit();
+    public abstract ShortCircuitProxy getShortCircuit();
 }

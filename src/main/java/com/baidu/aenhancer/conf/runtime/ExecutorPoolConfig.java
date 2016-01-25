@@ -1,4 +1,4 @@
-package com.baidu.aenhancer.core.conf;
+package com.baidu.aenhancer.conf.runtime;
 
 public class ExecutorPoolConfig implements Cloneable {
     private int corePoolSize;

@@ -5,7 +5,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.baidu.aenhancer.core.conf.ConfigManager;
+import com.baidu.aenhancer.conf.runtime.RuntimeConfigManager;
 import com.baidu.aenhancer.exception.CodingError;
 
 public class ExecPoolFactory {
@@ -38,9 +38,9 @@ public class ExecPoolFactory {
     public ExecPool getExecPool(String group) throws CodingError {
         ExecPool pool = pools.get(group);
         if (null == pool) {
-            pools.putIfAbsent(group, ConfigManager.factory(ExecPool.class, group));
+            pools.putIfAbsent(group, RuntimeConfigManager.factory(ExecPool.class, group));
+            pool = pools.get(group);
         }
-        return pools.get(group);
+        return pool;
     }
-
 }

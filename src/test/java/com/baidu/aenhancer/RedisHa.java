@@ -32,7 +32,7 @@ import com.baidu.unbiz.redis.RedisCacheManager;
  */
 public class RedisHa implements CacheDriver {
 
-    @Resource(name = "innerSitekvRedisMgr")
+    // @Resource(name = "innerSitekvRedisMgr")
     private RedisCacheManager innerSitekvRedisMgr;
 
     /**

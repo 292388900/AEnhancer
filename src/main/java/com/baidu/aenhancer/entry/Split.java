@@ -17,4 +17,5 @@ import java.lang.annotation.Target;
 @Documented
 public @interface Split {
 
+    String value() default "";
 }

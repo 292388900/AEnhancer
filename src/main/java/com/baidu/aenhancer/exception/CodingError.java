@@ -1,6 +1,6 @@
 package com.baidu.aenhancer.exception;
 
-public class CodingError extends EnhancerCheckedException {
+public class CodingError extends EnhancerRuntimeException {
 
     private static final long serialVersionUID = 1L;
 

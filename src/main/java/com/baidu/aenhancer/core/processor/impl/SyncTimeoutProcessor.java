@@ -27,7 +27,7 @@ import com.baidu.aenhancer.exception.UnexpectedStateException;
  * @author xushuda
  *
  */
-@Component
+@Component("__defaultSyncTimeout")
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class SyncTimeoutProcessor extends Processor {
 

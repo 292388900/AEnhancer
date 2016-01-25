@@ -11,8 +11,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.baidu.aenhancer.core.conf.Configurable;
-import com.baidu.aenhancer.core.conf.ShortCircuitSlidingWindowConfig;
+import com.baidu.aenhancer.conf.runtime.Configurable;
+import com.baidu.aenhancer.conf.runtime.ShortCircuitSlidingWindowConfig;
 
 /**
  * 包含一个Timer线程，TickTock,

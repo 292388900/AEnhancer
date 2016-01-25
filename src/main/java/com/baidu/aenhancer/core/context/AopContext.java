@@ -1,30 +1,22 @@
 package com.baidu.aenhancer.core.context;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import org.apache.commons.lang.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.springframework.context.ApplicationContext;
 
-import com.baidu.aenhancer.core.processor.Processor;
 import com.baidu.aenhancer.core.processor.ext.CacheProxy;
+import com.baidu.aenhancer.core.processor.ext.Contextural;
 import com.baidu.aenhancer.core.processor.ext.FallbackProxy;
-import com.baidu.aenhancer.core.processor.ext.Fallbackable;
-import com.baidu.aenhancer.core.processor.ext.ShortCircuitable;
+import com.baidu.aenhancer.core.processor.ext.ShortCircuitProxy;
 import com.baidu.aenhancer.core.processor.ext.SplitProxy;
-import com.baidu.aenhancer.core.processor.ext.Splitable;
 import com.baidu.aenhancer.core.processor.ext.impl.ExecPool;
-import com.baidu.aenhancer.entry.Collapse;
 import com.baidu.aenhancer.entry.Enhancer;
-import com.baidu.aenhancer.entry.Enhancer.NULL;
-import com.baidu.aenhancer.entry.FallbackMock;
-import com.baidu.aenhancer.entry.Split;
 import com.baidu.aenhancer.exception.CodingError;
-import com.baidu.aenhancer.exception.UnexpectedStateException;
+import com.baidu.aenhancer.exception.IllegalParamException;
 
 /**
  * 处理上下文的AOP版本（从annotation中获取的信息）
@@ -44,7 +36,9 @@ public class AopContext implements ProcessContext {
     private CacheProxy cacher = null;
     private SplitProxy spliter = null;
     private FallbackProxy fallback = null;
-    private ShortCircuitable shortcircuit = null;
+    private ShortCircuitProxy shortcircuit = null;
+
+    private Map<Class<? extends Contextural>, Contextural> extMap;
 
     public AopContext(Enhancer annotation, ProceedingJoinPoint jp, ApplicationContext context)
             throws InstantiationException, IllegalAccessException, CodingError, SecurityException,
@@ -53,146 +47,32 @@ public class AopContext implements ProcessContext {
         this.annotation = annotation;
         this.jp = jp;
         clonedArgs = jp.getArgs().clone();
+        // String methodName = ((MethodSignature) jp.getSignature()).getName();
 
-        // cacher
-        if (annotation.cacher() != Enhancer.NULL.class) {
-            Constructor<? extends CacheProxy> cons = annotation.cacher().getConstructor();
-            cons.setAccessible(true);
-            cacher = cons.newInstance();
-            cacher.init(jp, context);
-        }
-
-        // spliter
-        if (annotation.spliter() != Enhancer.NULL.class) {
-            Constructor<? extends Splitable> cons = annotation.spliter().getConstructor();
-            cons.setAccessible(true);
-            spliter = getSplitProxy(cons.newInstance());
-            if (null == spliter) {
-                throw new CodingError("no @Split and @Collapse Annotationed method in class: " + annotation.spliter());
-            }
+        // new split
+        if (!StringUtils.isEmpty(annotation.parallel().spliter())) {
+            spliter = context.getBean(annotation.parallel().spliter(), SplitProxy.class);
             spliter.init(jp, context);
         }
 
+        // cacher
+        if (!StringUtils.isEmpty(annotation.cacher())) {
+            cacher = context.getBean(annotation.cacher(), CacheProxy.class);
+            cacher.init(jp, context);
+        }
+
         // fall back
-        if (annotation.fallback() != Enhancer.NULL.class) {
-            Constructor<? extends Fallbackable> cons = annotation.fallback().getConstructor();
-            cons.setAccessible(true);
-            fallback = genInnerFallBack(cons.newInstance());
-            if (null == fallback) {
-                throw new CodingError("no @FallBackMock on any method of class:" + annotation.fallback());
-            }
+        if (!StringUtils.isEmpty(annotation.fallback())) {
+            fallback = context.getBean(annotation.fallback(), FallbackProxy.class);
             fallback.init(jp, context);
         }
 
         // shortcircuit
-        if (annotation.shortcircuit() != NULL.class) {
-            Constructor<? extends ShortCircuitable> cons = annotation.shortcircuit().getConstructor();
-            cons.setAccessible(true);
-            shortcircuit = cons.newInstance();
+        if (!StringUtils.isEmpty(annotation.shortcircuit())) {
+            shortcircuit = context.getBean(annotation.shortcircuit(), ShortCircuitProxy.class);
             shortcircuit.init(jp, context);
         }
 
-    }
-
-    private SplitProxy getSplitProxy(final Splitable userSpliter) throws CodingError {
-        if (null == userSpliter) {
-            return null;
-        }
-        if (userSpliter instanceof SplitProxy) {
-            return SplitProxy.class.cast(userSpliter);
-        }
-        Method split = null;
-        Method collapse = null;
-        for (Method method : userSpliter.getClass().getDeclaredMethods()) {
-            if (method.isAnnotationPresent(Split.class)) {
-                // 必须返回一个List的子类
-                if (!List.class.isAssignableFrom(method.getReturnType())) {
-                    throw new CodingError("spliter return type must be sub Class of List");
-                }
-                split = method;
-            } else if (method.isAnnotationPresent(Collapse.class)) {
-                Class<?>[] paramTypes = method.getParameterTypes();
-                // 实际上要把List<Object>传给这个方法，paramTypes[0].isAssignableFrom(List.class)
-                if (paramTypes.length != 1 || !paramTypes[0].isAssignableFrom(List.class)) {
-                    throw new CodingError("param of collapse must be a list");
-                }
-                collapse = method;
-            }
-            // 创建代理类
-            if (split != null && collapse != null) {
-                final Method fsplier = split;
-                final Method fcollapse = collapse;
-                return new SplitProxy() {
-
-                    @Override
-                    public void init(ProceedingJoinPoint jp, ApplicationContext context) throws CodingError {
-                        userSpliter.init(jp, context);
-
-                    }
-
-                    @Override
-                    public void beforeProcess(ProcessContext ctx, Processor currentProcess) {
-                        userSpliter.beforeProcess(ctx, currentProcess);
-                    }
-
-                    @SuppressWarnings("unchecked")
-                    @Override
-                    public List<Object[]> split(Object[] args) {
-                        try {
-                            return (List<Object[]>) fsplier.invoke(userSpliter, args);
-                        } catch (Exception e) {
-                            return null;
-                        }
-                    }
-
-                    @Override
-                    public Object collapse(List<Object> result) {
-                        try {
-                            return fcollapse.invoke(userSpliter, result);
-                        } catch (Exception e) {
-                            throw new UnexpectedStateException(e);
-                        }
-                    }
-                };
-            }
-        }
-        return null;
-    }
-
-    private FallbackProxy genInnerFallBack(final Fallbackable userFallback) {
-        if (null == userFallback) {
-            return null;
-        }
-        // 本身就是Proxy类
-        if (userFallback instanceof FallbackProxy) {
-            return FallbackProxy.class.cast(userFallback);
-        }
-        // 根据annotation代理到Proxy上
-        for (final Method method : userFallback.getClass().getDeclaredMethods()) {
-            if (method.isAnnotationPresent(FallbackMock.class)) {
-                return new FallbackProxy() {
-                    @Override
-                    public void init(ProceedingJoinPoint jp, ApplicationContext context) throws CodingError {
-                        userFallback.init(jp, context);
-                    }
-
-                    @Override
-                    public void beforeProcess(ProcessContext ctx, Processor currentProcess) {
-                        userFallback.beforeProcess(ctx, currentProcess);
-                    }
-
-                    @Override
-                    public Object fallback(Object[] param) {
-                        try {
-                            return method.invoke(userFallback, (Object) param);
-                        } catch (Exception e) {
-                            throw new UnexpectedStateException(e);
-                        }
-                    }
-                };
-            }
-        }
-        return null;
     }
 
     /**
@@ -260,7 +140,7 @@ public class AopContext implements ProcessContext {
 
     @Override
     public boolean parallel() {
-        return annotation.parallel();
+        return spliter != null;
     }
 
     @Override
@@ -278,7 +158,7 @@ public class AopContext implements ProcessContext {
 
     @Override
     public String getGroup() {
-        String group = annotation.group();
+        String group = annotation.parallel().group();
         return StringUtils.isEmpty(group) ? ExecPool.SHARED : group;
     }
 
@@ -288,10 +168,18 @@ public class AopContext implements ProcessContext {
     }
 
     @Override
-    public ShortCircuitable getShortCircuit() {
+    public ShortCircuitProxy getShortCircuit() {
         if (null == shortcircuit) {
             throw new NullPointerException("shortcircuit is null");
         }
         return shortcircuit;
+    }
+
+    public <T extends Contextural> T getExt(Class<T> extClass) {
+        Contextural ext = extMap.get(extClass);
+        if (ext != null && extClass.isAssignableFrom(ext.getClass())) {
+            return extClass.cast(ext);
+        }
+        throw new IllegalParamException("the instance doesn't exists or class " + extClass);
     }
 }
