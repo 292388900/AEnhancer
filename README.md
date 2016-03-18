@@ -28,7 +28,8 @@
 			场景1:有个web项目，现在有功能需要上线发布，由于后方依赖还没上线，不希望用户方法方法。
 			用框架的短路功能将这个功能短路即可。
 			场景2:比如web项目的一个restful接口，如果输入非常大则耗时很长，同时有大量输入还有可能打满线程池。
-			那么传统的做法可以修改代码增加一个参数量或者范围限制，但是这样的弊端就是要改代码，如果要可配置动态调整，			还是有不小的workload，范围太小还会阻碍大部分用户正常使用。所以，可以增加一个超时控制，来更直观地控制
+			那么传统的做法可以修改代码增加一个参数量或者范围限制，但是这样的弊端就是要改代码，如果要可配置动态调整，
+			还是有不小的workload，范围太小还会阻碍大部分用户正常使用。所以，可以增加一个超时控制，来更直观地控制
 			服务稳定性。
 			场景3:比如公司某rpc接口，给各个使用方提供服务。但是对“试用用户”有调用次数限制，那么可以使用短路模块
 			（实现ShortCircuitProxy）自定义流量控制功能（比如分用户count，一小时多少次）。
@@ -54,13 +55,14 @@
 		(PS：@Aggr是默认实现所定义的注解，用户的实现也能定义任意注解，自行解析）
 		@Aggr(sequential = true, batchSize = 1)
     	@Enhancer( //
-        	    timeout = 100, // 超时时间
-           		cacher = AggrCacher.class, // 缓存策略：按集合对象中的元素缓存
-            	spliter = AggrSpliter.class, // 拆分成多次调用的策略：按集合元素个数拆分
-            	parallel = true, // 可并行
-            	group = "ServiceGroupA", // 所属的组
-            	fallback = ReturnNull.class, // 降级策略
-            	retry = 3 // 异常重试次数3
+    	        timeout = 100, // 超时时间
+           	cacher = "aggrCache", // 缓存策略：按集合对象中的元素缓存
+           	fallback = "ReturnNull", // 降级策略
+                retry = 3 // 异常重试次数3
+           	@Parallel(
+           		spliter="aggr", // 拆分成多次调用的策略：按集合元素个数拆分
+           		group = "ServiceGroupA" // 所属的组
+           		)
     	)
     	public List<TaskResult> runTask(String[] args, Object paramX)
   
