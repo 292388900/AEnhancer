@@ -39,6 +39,7 @@ public class ShortCircuitProcessor extends Processor {
         }
         logger.info("ctxId {} is shortcircuited ", ctx.getCtxId());
         // 如果是短路状态，直接抛出运行时异常
+        // 有fallback的话理应被fallback捕获
         throw new EnhancerRuntimeException("ctxId: " + ctx.getCtxId()
                 + ", the processor is short circuit by state machine");
     }

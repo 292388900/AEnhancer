@@ -36,7 +36,7 @@ public class CollapseParser implements LoadtimeMethodAnnotationParser<Collapse> 
 
         String commandName = annotation.value();
         if (StringUtils.isEmpty(commandName)) {
-            commandName = beanName + ".spliter";
+            commandName = beanName + SplitParser.COMMAND_SUFFIX;
         }
 
         if (null != commands.get(commandName)) {
@@ -74,6 +74,9 @@ public class CollapseParser implements LoadtimeMethodAnnotationParser<Collapse> 
             logger.info("SplitProxy with bean name \"{}\" is registerd ", commandName);
             splitParser.commands.remove(commandName);
         } else {
+            if (commands.containsKey(commandName)) {
+                throw new CodingError("collapse command named :" + commandName + " already exists ");
+            }
             commands.put(commandName, command);
         }
     }

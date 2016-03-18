@@ -19,7 +19,7 @@ public class FallbackParser implements LoadtimeMethodAnnotationParser<Fallback> 
 
     @Override
     public void parse(Fallback annotation, final Method method, DefaultListableBeanFactory ctx, String beanName) {
-
+        
         String commandName = annotation.value();
         if (StringUtils.isEmpty(commandName)) {
             commandName = beanName + ".fallback";
@@ -36,6 +36,10 @@ public class FallbackParser implements LoadtimeMethodAnnotationParser<Fallback> 
             @Override
             public Object call(Object...args) {
                 try {
+                    logger.info("fall back: args: {}, param types: {}", args, method.getParameterTypes().length);
+                    if (method.getParameterTypes().length == 0) {
+                        return method.invoke(bean);
+                    }
                     // method.setAccessible(true);
                     return method.invoke(bean, args);
                 } catch (Exception e) {

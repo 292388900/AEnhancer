@@ -45,7 +45,7 @@ public class BeanMock {
     }
 
     @Enhancer(fallback = "wrong")
-    public void testFallback() {
+    public int testFallback(Integer x) {
         try {
             Thread.sleep(000);
         } catch (InterruptedException e) {
@@ -77,7 +77,7 @@ public class BeanMock {
     timeout = 100, // 超时时间
     cacher = "aggrCache", // 缓存策略：按集合对象中的元素缓存
     parallel = @Parallel(spliter = "aggr", group = "ServiceGroupA"), // 并行
-    fallback = "ReturnNull" // 降级策略
+    fallback = "wrong" // 降级策略
     )
     public List<String> getStrs(String[] args) {
         try {
@@ -86,7 +86,8 @@ public class BeanMock {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        return Arrays.asList(args);
+        throw new RuntimeException();
+//        return Arrays.asList(args);
     }
 
     @Aggr(cache = "")

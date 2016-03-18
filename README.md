@@ -33,7 +33,7 @@
 			场景3:比如公司某rpc接口，给各个使用方提供服务。但是对“试用用户”有调用次数限制，那么可以使用短路模块
 			（实现ShortCircuitProxy）自定义流量控制功能（比如分用户count，一小时多少次）。
 	安利一下：
-	只需要在xml中添加两行，就能拥有这些功能！
+	只需要在xml中添加两行，就能拥有这些功能！（依赖Spring）
 		<aop:aspectj-autoproxy />
 		<context:component-scan base-package="com.baidu.aenhancer" />
 
@@ -130,7 +130,8 @@
 ~~12、短路分method控制，线程池分group控制~~ Done @1.20 by xusoda  
 ~~13、框架模块失效控制?~~ Discard（由实现类容错） @1.17 by xusoda   
 14、注解支持并行度控制，使用信号量模拟多个线程池隔离  
-15、信号以及数据传输到Master的中间件，屏蔽传输细节，提供vm之间交互的接口  Designing @1.20
+15、信号以及数据传输到Master的中间件，屏蔽传输细节，提供vm之间交互的接口  Designing @1.20  
 ~~16、将部分runtime的解析调整到loadtime~~ Done @1.24 by xusoda  
 17、验证直接根据原类获得的method对象在代理类上调用的结果，related to (4)    
 18、re fac 动态加载刷新配置模块，支持interface动态刷新用户自定义配置  
+19、验证以及解决多个applicationContext继承的时候出现的问题（worst：要在多个context中加载LoadtimeMethodAnnotationParser的实现类）  

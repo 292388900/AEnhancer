@@ -15,7 +15,7 @@ public abstract class Processor {
     protected Processor decoratee;
 
     public Processor() {
-        this.decoratee = null;
+        this(null);
     }
 
     public Processor(Processor decoratee) {

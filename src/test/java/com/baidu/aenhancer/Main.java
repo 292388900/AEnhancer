@@ -21,7 +21,8 @@ public class Main {
     public static void main(String[] args) {
         entry1.getStrs(new String[] { "b", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b" });
         entry1.get(5);
-        entry1.testFallback();
+        int x = entry1.testFallback(1);
+        System.out.println("with null return, primitive type int value is " + x);
         entry1.costomSplit(1, 2);
         entry2.test();
 

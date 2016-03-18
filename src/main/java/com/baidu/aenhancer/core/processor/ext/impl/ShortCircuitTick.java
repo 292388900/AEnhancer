@@ -3,6 +3,7 @@ package com.baidu.aenhancer.core.processor.ext.impl;
 import java.lang.reflect.Method;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,7 +46,7 @@ public class ShortCircuitTick implements Configurable<ShortCircuitSlidingWindowC
     public ShortCircuitTick() {
         slideMaps = new ConcurrentHashMap<Method, SlidingWindow<ShortCircuitFigure>>();
         config = new ShortCircuitSlidingWindowConfig();
-        config(config); // FIXME 无法改变已经生成的window的size
+        config(config);
     }
 
     /**
@@ -126,6 +127,12 @@ public class ShortCircuitTick implements Configurable<ShortCircuitSlidingWindowC
         return rej;
     }
 
+    /**
+     * 在get window的时候会确定window的大小
+     * 
+     * @param method
+     * @return
+     */
     private SlidingWindow<ShortCircuitFigure> getSlideWindow(Method method) {
         if (null == method) {
             throw new NullPointerException("method is null");
@@ -153,9 +160,18 @@ public class ShortCircuitTick implements Configurable<ShortCircuitSlidingWindowC
         AtomicInteger errors = new AtomicInteger(0);
         AtomicInteger timeouts = new AtomicInteger(0);
         AtomicInteger rejections = new AtomicInteger(0);
+
+        // 重置
+        public void reset() {
+            successs.set(0);
+            errors.set(0);
+            timeouts.set(0);
+            rejections.set(0);
+        }
     }
 
     /**
+     * 包含一个固定大小的T的数组
      * 
      * @author xushuda
      *
@@ -166,6 +182,15 @@ public class ShortCircuitTick implements Configurable<ShortCircuitSlidingWindowC
          * 滑动窗口
          */
         private final T[] slots;
+
+        /**
+         * 窗口大小
+         * 
+         * @return
+         */
+        public int getWindowSize() {
+            return slots.length;
+        }
 
         /**
          * 
@@ -188,9 +213,8 @@ public class ShortCircuitTick implements Configurable<ShortCircuitSlidingWindowC
         }
 
         public void set(int id, T data) {
-            slots[id % slots.length] = data;
+            slots[id & 0x7FFFFFF % slots.length] = data;
         }
-
     }
 
     @Override
@@ -198,22 +222,51 @@ public class ShortCircuitTick implements Configurable<ShortCircuitSlidingWindowC
         return config;
     }
 
+    /**
+     * 线程安全，对该对象进行配置
+     */
     @Override
-    public void config(final ShortCircuitSlidingWindowConfig config) {
-        this.config = config;
-        synchronized (this) {
-            if (null != timer) {
-                timer.cancel();
-            }
-            timer = new Timer(true);
-            timer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    tick += 1; // 每过interval时间就会+1
-                    logger.info("after {} milliseconds, ++tick={}", config.getInterval(), tick);
+    public synchronized void config(final ShortCircuitSlidingWindowConfig config) {
+        ShortCircuitSlidingWindowConfig oldConfig = this.config;
+        this.config = config; // 这行代码之后，新的window的size就是新的config中的大小了
+        // 原有windowSize，新windowSize不一样
+        if (null != oldConfig && oldConfig.getWindowSize() != config.getWindowSize()) {
+            for (Entry<Method, SlidingWindow<ShortCircuitFigure>> entry : slideMaps.entrySet()) {
+                int tmpTick = this.tick;
+                // 可能遍历到新的window
+                if (config.getWindowSize() == oldConfig.getWindowSize()) {
+                    continue;
                 }
-            }, config.getInterval(), config.getInterval());
+                int minSize = Math.min(config.getWindowSize(), oldConfig.getWindowSize());
+                // 新的slidingWindow
+                SlidingWindow<ShortCircuitFigure> toSw =
+                        new SlidingWindow<ShortCircuitFigure>(new ShortCircuitFigure[config.getWindowSize()]);
+                // 从原有的slidingWindow拷贝数据
+                SlidingWindow<ShortCircuitFigure> fromSw = entry.getValue();
+                for (int i = minSize; i >= 0; i--) {
+                    toSw.set(tmpTick - i, fromSw.get(tmpTick - i));
+                }
+                // 这时候修改了window的size,新的数据会写入新的slidingWindow但是timer的时间间隔还是没有修改
+                entry.setValue(toSw);
+            }
         }
+        if (null != timer) {
+            timer.cancel();
+        }
+        timer = new Timer(true);
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                int newTick = tick + 1;
+                // 删除已有旧数据，没有的话为空操作。TODO 这里可能有多个线程运行这段代码，线性的速度下降风险
+                for (SlidingWindow<ShortCircuitFigure> sw : slideMaps.values()) {
+                    sw.get(newTick).reset();
+                }
+                // 清除newTick中旧的数据后，新的数据会写入新的block中
+                tick = newTick; // 每过interval时间就会+1
+                logger.info("after {} milliseconds, ++tick={}", config.getInterval(), tick);
+            }
+        }, config.getInterval(), config.getInterval());
     }
 
     @Override

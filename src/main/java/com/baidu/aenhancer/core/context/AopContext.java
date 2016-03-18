@@ -26,6 +26,7 @@ import com.baidu.aenhancer.exception.IllegalParamException;
  * @author xushuda
  *
  */
+// TODO IOC注入，使得用户可以继承修改，或者提供其他的注册对象获取对象到上线文的方法，（相关修改：builder）
 public class AopContext implements ProcessContext {
 
     private final long ctxId;

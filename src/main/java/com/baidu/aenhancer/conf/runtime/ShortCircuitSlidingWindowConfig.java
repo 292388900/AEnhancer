@@ -5,7 +5,6 @@ public class ShortCircuitSlidingWindowConfig implements Cloneable {
     private int interval; // millisecond
 
     public ShortCircuitSlidingWindowConfig(int windowSize, int interval) {
-        super();
         this.windowSize = windowSize;
         this.interval = interval;
     }

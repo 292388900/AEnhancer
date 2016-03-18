@@ -8,6 +8,12 @@ import com.baidu.aenhancer.core.processor.Processor;
 import com.baidu.aenhancer.core.processor.ext.FallbackProxy;
 import com.baidu.aenhancer.exception.CodingError;
 
+/**
+ * FallbackProxy的wrapper
+ * 
+ * @author xushuda
+ *
+ */
 public class FallbackImpl implements FallbackProxy {
 
     private StatelessCommand command;

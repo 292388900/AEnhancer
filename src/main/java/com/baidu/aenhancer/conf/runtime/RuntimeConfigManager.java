@@ -132,9 +132,9 @@ public class RuntimeConfigManager {
      * @throws CodingError
      */
     @SuppressWarnings("unchecked")
-    public static <CONF, OBJ extends Configurable<CONF>> OBJ factory(String fileName, Class<OBJ> clazz, Object...p)
+    public static <CONF, TARGET_OBJ extends Configurable<CONF>> TARGET_OBJ factory(String fileName, Class<TARGET_OBJ> clazz, Object...p)
             throws CodingError {
-        OBJ ret = null;
+        TARGET_OBJ ret = null;
         // 由Configurable类获取泛型的配置类
         Class<CONF> confCls = null;
         Type[] types = clazz.getGenericInterfaces();
@@ -184,6 +184,7 @@ public class RuntimeConfigManager {
     }
 
     /**
+     * 返回真实的类型
      * 
      * @param from
      * @return

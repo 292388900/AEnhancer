@@ -12,6 +12,11 @@ import com.baidu.aenhancer.conf.runtime.ShortCircuitStateMachineConfig;
 import com.baidu.aenhancer.exception.IllegalParamException;
 
 /**
+ * 每个shortcircuit注解的method有个状态机。
+ * 
+ * 在多线程环境下，如果执行完方法的顺序和进入状态机的时序不相同，可能会造成不一样的结果。<br>
+ * 这里是个trade off，因为要保证执行的时序，所有执行都要序列化了，可能会阻塞方法调用
+ * 
  * @author xushuda
  *
  */
@@ -19,6 +24,7 @@ public class ShortCircuitStateMachine implements Configurable<ShortCircuitStateM
 
     private Method method;
 
+    // 当前状态
     private final AtomicReference<TimestampdStatus> statusRef;
 
     private volatile ShortCircuitStateMachineConfig config;
@@ -55,20 +61,22 @@ public class ShortCircuitStateMachine implements Configurable<ShortCircuitStateM
     }
 
     /**
+     * 将数据输入状态机
      * 
      * @param method
-     * @return
+     * @return 是否短路
      */
     public boolean shortcircuit(int success, int timeout, int error, int rej, int tick) {
         // AtomicReference<TimestampdStatus> tsRef = getStatus(method, tick);
         boolean shortcircuit = false;
-        TimestampdStatus ts = statusRef.get();
-        switch (ts.status) {
+        // 当前状态
+        TimestampdStatus curTs = statusRef.get();
+        switch (curTs.status) {
             case NATURAL_STATE:
                 if (success + timeout + error + rej > config.getLeastSample()
                         && (double) success / (timeout + error + rej + success) < config.getMinSuccessPerentage()) {
                     // 修改状态
-                    if (statusRef.compareAndSet(ts, new TimestampdStatus(tick, CircuitStatus.SHORT_CIRCUIT))) {
+                    if (statusRef.compareAndSet(curTs, new TimestampdStatus(tick, CircuitStatus.SHORT_CIRCUIT))) {
                         logger.info(
                                 "method : \".{}({})\" success percentage is too low at: \"{}\" , cause short circuit",
                                 method.getName(), method.getParameterTypes(), (double) success
@@ -83,19 +91,19 @@ public class ShortCircuitStateMachine implements Configurable<ShortCircuitStateM
                 break;
             case MIDDLE_STATE:
                 // 半开放，超过了trails次数就要短路
-                if (ts.trails.addAndGet(1) > config.getFailLimit() + config.getSuccessLimit()) {
-                    ts.trails.addAndGet(-1);
+                if (curTs.trails.addAndGet(1) > config.getFailLimit() + config.getSuccessLimit()) {
+                    curTs.trails.addAndGet(-1);
                     shortcircuit = true;
                 }
                 break;
-            case SHORT_CIRCUIT:
+            case SHORT_CIRCUIT: // 失败比例导致短路，或者手动设为短路
                 // 超过elapse时间则变为中间状态
-                if (tick > ts.tick + config.getElapse()) {
+                if (tick > curTs.tick + config.getElapse()) {
                     TimestampdStatus newTs = new TimestampdStatus(tick, CircuitStatus.MIDDLE_STATE);
-                    if (statusRef.compareAndSet(ts, newTs)) {
+                    if (statusRef.compareAndSet(curTs, newTs)) {
                         newTs.trails = new AtomicInteger(0);
                         newTs.success = new AtomicInteger(0);
-                        logger.info("short circuit start at {} change to middle state at {}", ts.tick, tick);
+                        logger.info("short circuit start at {} change to middle state at {}", curTs.tick, tick);
                     }
                 }
                 shortcircuit = true;
