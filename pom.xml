@@ -6,12 +6,34 @@
 	<artifactId>Enhancer-Aop</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 
+
 	<!-- properties -->
 	<properties>
 		<spring.version>3.1.2.RELEASE</spring.version>
 		<aspectj.version>1.7.2</aspectj.version>
+
+		<!-- Baidu repositories -->
 		<baidu.local.repository>http://maven.scm.baidu.com:8081/nexus/content/groups/public</baidu.local.repository>
+		<baidu.deploy.repository.id>Baidu_Local</baidu.deploy.repository.id>
+		<baidu.deploy.snapshotRepository.id>Baidu_Local_Snapshots</baidu.deploy.snapshotRepository.id>
+		<baidu.deploy.repository.url>http://maven.scm.baidu.com:8081/nexus/content/repositories/Baidu_Local/
+		</baidu.deploy.repository.url>
+		<baidu.deploy.snapshotRepository.url>
+			http://maven.scm.baidu.com:8081/nexus/content/repositories/Baidu_Local_Snapshots/
+		</baidu.deploy.snapshotRepository.url>
 	</properties>
+	<!-- deploy to Baidu Maven repository -->
+	<distributionManagement>
+		<repository>
+			<id>${baidu.deploy.repository.id}</id>
+			<url>${baidu.deploy.repository.url}</url>
+		</repository>
+		<snapshotRepository>
+			<id>${baidu.deploy.snapshotRepository.id}</id>
+			<url>${baidu.deploy.snapshotRepository.url}</url>
+		</snapshotRepository>
+	</distributionManagement>
+
 	<repositories>
 		<repository>
 			<id>central</id>
@@ -90,6 +112,12 @@
 	</dependencies>
 	<build>
 		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<encoding>UTF-8</encoding>
+				</configuration>
+			</plugin>
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<configuration>
